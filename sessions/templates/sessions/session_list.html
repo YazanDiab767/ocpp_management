@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Charging Sessions - OCPP Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">Charging Sessions</h4>
+    <a href="{% url 'session-active' %}" class="btn btn-outline-success">
+        <i class="bi bi-lightning-charge me-1"></i>Active Sessions
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-2">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-auto">
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <input type="text" name="charge_point_id" class="form-control form-control-sm"
+                       placeholder="Charger ID" value="{{ cp_filter }}">
+            </div>
+            <div class="col-auto">
+                <input type="text" name="q" class="form-control form-control-sm"
+                       placeholder="Search txn/tag/customer..." value="{{ search }}">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
+                {% if status_filter or cp_filter or search %}
+                <a href="{% url 'session-list' %}" class="btn btn-sm btn-outline-secondary">Clear</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Txn ID</th>
+                    <th>Charger</th>
+                    <th>Connector</th>
+                    <th>Customer</th>
+                    <th>Status</th>
+                    <th>Energy (kWh)</th>
+                    <th>Cost (ILS)</th>
+                    <th>Started</th>
+                    <th>Duration</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in page_obj %}
+                <tr>
+                    <td>
+                        <a href="{% url 'session-detail' s.transaction_id %}" class="text-decoration-none fw-medium">
+                            #{{ s.transaction_id }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if s.charge_point %}
+                        <a href="{% url 'charger-detail' s.charge_point.pk %}" class="text-decoration-none">
+                            {{ s.charge_point.name }}
+                        </a>
+                        {% else %}
+                        <code>{{ s.charge_point_id_str }}</code>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if s.connector %}
+                        #{{ s.connector.connector_id }}
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if s.customer %}
+                        <a href="{% url 'customer-detail' s.customer.pk %}" class="text-decoration-none">
+                            {{ s.customer.full_name }}
+                        </a>
+                        {% else %}
+                        <span class="text-muted">{{ s.id_tag }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% include "components/status_badge.html" with status=s.status %}
+                    </td>
+                    <td>{{ s.energy_delivered_kwh }}</td>
+                    <td>{{ s.total_cost }}</td>
+                    <td>
+                        {% if s.started_at %}
+                        {{ s.started_at|date:"d M H:i" }}
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if s.duration_seconds %}
+                            {% widthratio s.duration_seconds 60 1 %} min
+                        {% elif s.status == 'active' and s.started_at %}
+                            <span class="text-success">In progress</span>
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="text-center text-muted py-4">No sessions found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% include "includes/pagination.html" %}
+{% endblock %}

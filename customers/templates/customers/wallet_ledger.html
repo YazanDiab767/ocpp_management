@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Wallet Ledger - {{ customer.full_name }} - OCPP Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-0">Wallet Ledger</h4>
+        <p class="text-muted mb-0">
+            {{ customer.full_name }} | Balance: <strong class="text-success">{{ customer.wallet.balance }} ILS</strong>
+        </p>
+    </div>
+    <a href="{% url 'wallet-topup' customer.pk %}" class="btn btn-success">
+        <i class="bi bi-plus-circle me-1"></i>Top Up
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th>Balance Before</th>
+                    <th>Balance After</th>
+                    <th>Receipt</th>
+                    <th>Description</th>
+                    <th>By</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for txn in page_obj %}
+                <tr>
+                    <td>{{ txn.created_at|date:"M d, Y H:i" }}</td>
+                    <td><span class="badge bg-{% if txn.transaction_type == 'topup' %}success{% elif txn.transaction_type == 'charge_deduction' %}danger{% elif txn.transaction_type == 'refund' %}info{% else %}secondary{% endif %}">{{ txn.get_transaction_type_display }}</span></td>
+                    <td class="{% if txn.amount > 0 %}text-success{% else %}text-danger{% endif %} fw-bold">
+                        {% if txn.amount > 0 %}+{% endif %}{{ txn.amount }} ILS
+                    </td>
+                    <td>{{ txn.balance_before }} ILS</td>
+                    <td>{{ txn.balance_after }} ILS</td>
+                    <td>{{ txn.receipt_number|default:"-" }}</td>
+                    <td>{{ txn.description|default:"-" }}</td>
+                    <td>{{ txn.created_by.full_name|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="text-center text-muted py-4">No transactions found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% include "includes/pagination.html" %}
+{% endblock %}

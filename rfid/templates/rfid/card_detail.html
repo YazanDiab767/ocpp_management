@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Card {{ card.card_number }} - OCPP Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">Card: {{ card.card_number }}</h4>
+    <div class="d-flex gap-2">
+        <a href="{% url 'card-update' card.pk %}" class="btn btn-primary">
+            <i class="bi bi-pencil me-1"></i>Edit
+        </a>
+        {% if card.status != 'blocked' %}
+        <form method="post" action="{% url 'card-block' card.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger" onclick="return confirm('Block this card?')">
+                <i class="bi bi-x-circle me-1"></i>Block
+            </button>
+        </form>
+        {% endif %}
+        {% if not card.customer %}
+        <a href="{% url 'card-assign' card.pk %}" class="btn btn-success">
+            <i class="bi bi-person-plus me-1"></i>Assign
+        </a>
+        {% else %}
+        <form method="post" action="{% url 'card-unassign' card.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-warning" onclick="return confirm('Unassign this card from customer?')">
+                <i class="bi bi-person-dash me-1"></i>Unassign
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent"><h6 class="mb-0">Card Information</h6></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Card Number</dt>
+                    <dd class="col-sm-8">{{ card.card_number }}</dd>
+
+                    <dt class="col-sm-4">ID Tag (UID)</dt>
+                    <dd class="col-sm-8"><code>{{ card.id_tag }}</code></dd>
+
+                    <dt class="col-sm-4">Status</dt>
+                    <dd class="col-sm-8">{% include "components/status_badge.html" with status=card.get_status_display %}</dd>
+
+                    {% if card.expiry_date %}
+                    <dt class="col-sm-4">Expiry Date</dt>
+                    <dd class="col-sm-8">{{ card.expiry_date|date:"M d, Y" }}</dd>
+                    {% endif %}
+
+                    <dt class="col-sm-4">Created</dt>
+                    <dd class="col-sm-8">{{ card.created_at|date:"M d, Y H:i" }}</dd>
+
+                    {% if card.issued_by %}
+                    <dt class="col-sm-4">Issued By</dt>
+                    <dd class="col-sm-8">{{ card.issued_by.full_name }}</dd>
+                    {% endif %}
+
+                    {% if card.issued_at %}
+                    <dt class="col-sm-4">Issued At</dt>
+                    <dd class="col-sm-8">{{ card.issued_at|date:"M d, Y H:i" }}</dd>
+                    {% endif %}
+
+                    {% if card.notes %}
+                    <dt class="col-sm-4">Notes</dt>
+                    <dd class="col-sm-8">{{ card.notes }}</dd>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent"><h6 class="mb-0">Linked Customer</h6></div>
+            <div class="card-body">
+                {% if card.customer %}
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Name</dt>
+                    <dd class="col-sm-8">
+                        <a href="{% url 'customer-detail' card.customer.pk %}" class="text-decoration-none">
+                            {{ card.customer.full_name }}
+                        </a>
+                    </dd>
+                    <dt class="col-sm-4">Phone</dt>
+                    <dd class="col-sm-8">{{ card.customer.phone_number }}</dd>
+                    <dt class="col-sm-4">Status</dt>
+                    <dd class="col-sm-8">
+                        {% if card.customer.is_active %}
+                        <span class="badge bg-success">Active</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Inactive</span>
+                        {% endif %}
+                    </dd>
+                    {% if card.customer.wallet %}
+                    <dt class="col-sm-4">Balance</dt>
+                    <dd class="col-sm-8 fw-bold text-success">{{ card.customer.wallet.balance }} ILS</dd>
+                    {% endif %}
+                </dl>
+                {% else %}
+                <div class="text-center py-3">
+                    <p class="text-muted mb-2">No customer assigned</p>
+                    <a href="{% url 'card-assign' card.pk %}" class="btn btn-sm btn-success">
+                        <i class="bi bi-person-plus me-1"></i>Assign Customer
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

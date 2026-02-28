@@ -1,0 +1,16 @@
+{#<!-- Usage: {% include "components/stat_widget.html" with icon="bi-people" value="42" label="Customers" color="primary" %} -->#}
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="d-flex align-items-center">
+            <div class="flex-shrink-0">
+                <div class="bg-{{ color|default:'primary' }} bg-opacity-10 rounded-3 p-3">
+                    <i class="bi {{ icon }} fs-3 text-{{ color|default:'primary' }}"></i>
+                </div>
+            </div>
+            <div class="flex-grow-1 ms-3">
+                <h3 class="mb-0 fw-bold">{{ value }}</h3>
+                <span class="text-muted small">{{ label }}</span>
+            </div>
+        </div>
+    </div>
+</div>

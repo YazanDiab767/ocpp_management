@@ -1,0 +1,20 @@
+{#<!-- Usage: {% include "components/status_badge.html" with status="Available" %} -->#}
+{% if status == 'Available' or status == 'online' or status == 'active' or status == 'Active' %}
+<span class="badge bg-success">{{ status }}</span>
+{% elif status == 'Charging' %}
+<span class="badge bg-primary">{{ status }}</span>
+{% elif status == 'Preparing' or status == 'Finishing' %}
+<span class="badge bg-info text-dark">{{ status }}</span>
+{% elif status == 'SuspendedEV' or status == 'SuspendedEVSE' %}
+<span class="badge bg-warning text-dark">{{ status }}</span>
+{% elif status == 'Faulted' or status == 'faulted' or status == 'blocked' or status == 'Blocked' %}
+<span class="badge bg-danger">{{ status }}</span>
+{% elif status == 'Unavailable' or status == 'offline' or status == 'inactive' %}
+<span class="badge bg-secondary">{{ status }}</span>
+{% elif status == 'Reserved' %}
+<span class="badge bg-purple text-white">{{ status }}</span>
+{% elif status == 'completed' or status == 'Completed' %}
+<span class="badge bg-success">{{ status }}</span>
+{% else %}
+<span class="badge bg-secondary">{{ status }}</span>
+{% endif %}

@@ -1,0 +1,86 @@
+/* Offset body for fixed navbar */
+body {
+    padding-top: 56px;
+}
+
+/* Sidebar styling */
+.sidebar {
+    position: fixed;
+    top: 56px;
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+    padding: 0;
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+    overflow-y: auto;
+}
+
+.sidebar .nav-link {
+    font-weight: 500;
+    color: #555;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+
+.sidebar .nav-link:hover {
+    color: #0d6efd;
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+.sidebar .nav-link.active {
+    color: #0d6efd;
+    background-color: rgba(13, 110, 253, 0.1);
+    border-right: 3px solid #0d6efd;
+}
+
+.sidebar .nav-link .bi {
+    width: 20px;
+    text-align: center;
+}
+
+/* Card hover effect */
+.card-hover:hover {
+    transform: translateY(-2px);
+    transition: transform 0.2s;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Table improvements */
+.table th {
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #6c757d;
+}
+
+/* Status dot indicators */
+.status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+.status-dot.online { background-color: #198754; }
+.status-dot.offline { background-color: #6c757d; }
+.status-dot.faulted { background-color: #dc3545; }
+.status-dot.charging { background-color: #0d6efd; }
+
+/* Compact form labels */
+.form-label {
+    font-weight: 500;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+}
+
+/* Main content area */
+main {
+    min-height: calc(100vh - 56px);
+}
+
+/* Badge purple for reserved status */
+.bg-purple {
+    background-color: #6f42c1 !important;
+}

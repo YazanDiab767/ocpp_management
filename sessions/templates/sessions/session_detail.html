@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block title %}Session #{{ session.transaction_id }} - OCPP Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">
+        Session #{{ session.transaction_id }}
+        {% include "components/status_badge.html" with status=session.status %}
+    </h4>
+    <a href="{% url 'session-list' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back
+    </a>
+</div>
+
+<div class="row g-4">
+    <!-- Session Info -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light">
+                <strong>Session Details</strong>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless mb-0">
+                    <tr>
+                        <td class="text-muted" style="width:40%">Transaction ID</td>
+                        <td><strong>{{ session.transaction_id }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Charger</td>
+                        <td>
+                            {% if session.charge_point %}
+                            <a href="{% url 'charger-detail' session.charge_point.pk %}">
+                                {{ session.charge_point.name }}
+                            </a>
+                            {% else %}
+                            {{ session.charge_point_id_str }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Connector</td>
+                        <td>
+                            {% if session.connector %}
+                            #{{ session.connector.connector_id }} ({{ session.connector.get_connector_type_display }})
+                            {% else %}-{% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">RFID Tag</td>
+                        <td><code>{{ session.id_tag|default:"-" }}</code></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">RFID Card</td>
+                        <td>
+                            {% if session.rfid_card %}
+                            <a href="{% url 'card-detail' session.rfid_card.pk %}">
+                                {{ session.rfid_card.card_number }}
+                            </a>
+                            {% else %}-{% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Customer</td>
+                        <td>
+                            {% if session.customer %}
+                            <a href="{% url 'customer-detail' session.customer.pk %}">
+                                {{ session.customer.full_name }}
+                            </a>
+                            {% else %}-{% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Status</td>
+                        <td>{% include "components/status_badge.html" with status=session.status %}</td>
+                    </tr>
+                    {% if session.stop_reason %}
+                    <tr>
+                        <td class="text-muted">Stop Reason</td>
+                        <td>{{ session.stop_reason }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Energy & Billing -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light">
+                <strong>Energy & Billing</strong>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless mb-0">
+                    <tr>
+                        <td class="text-muted" style="width:40%">Meter Start</td>
+                        <td>{{ session.meter_start_wh }} Wh</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Meter Stop</td>
+                        <td>
+                            {% if session.meter_stop_wh is not None %}
+                            {{ session.meter_stop_wh }} Wh
+                            {% else %}-{% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Energy Delivered</td>
+                        <td><strong>{{ session.energy_delivered_kwh }} kWh</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Tariff</td>
+                        <td>{{ session.tariff_per_kwh }} ILS/kWh</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Total Cost</td>
+                        <td><strong class="text-primary fs-5">{{ session.total_cost }} ILS</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Cost Deducted</td>
+                        <td>{{ session.cost_deducted }} ILS</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mt-3">
+            <div class="card-header bg-light">
+                <strong>Timing</strong>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless mb-0">
+                    <tr>
+                        <td class="text-muted" style="width:40%">Started</td>
+                        <td>{{ session.started_at|date:"d M Y H:i:s"|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Stopped</td>
+                        <td>{{ session.stopped_at|date:"d M Y H:i:s"|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Duration</td>
+                        <td>
+                            {% if session.duration_seconds %}
+                            {% widthratio session.duration_seconds 60 1 %} min
+                            {% else %}-{% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Meter Values -->
+<div class="card border-0 shadow-sm mt-4">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <strong>Meter Values ({{ meter_values|length }})</strong>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Measurand</th>
+                    <th>Value</th>
+                    <th>Unit</th>
+                    <th>Context</th>
+                    <th>Phase</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mv in meter_values %}
+                <tr>
+                    <td>{{ mv.timestamp|date:"d M H:i:s" }}</td>
+                    <td>{{ mv.measurand }}</td>
+                    <td><strong>{{ mv.value }}</strong></td>
+                    <td>{{ mv.unit }}</td>
+                    <td>{{ mv.context }}</td>
+                    <td>{{ mv.phase|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-3">No meter values recorded.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

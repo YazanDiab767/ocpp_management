@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Active Sessions - OCPP Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">
+        <i class="bi bi-lightning-charge text-success me-2"></i>Active Sessions
+        <span class="badge bg-success ms-2">{{ sessions|length }}</span>
+    </h4>
+    <a href="{% url 'session-list' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-list me-1"></i>All Sessions
+    </a>
+</div>
+
+<div class="row g-3">
+    {% for s in sessions %}
+    <div class="col-lg-6 col-xl-4">
+        <div class="card border-0 shadow-sm border-start border-success border-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="mb-0">
+                        <a href="{% url 'session-detail' s.transaction_id %}" class="text-decoration-none">
+                            Session #{{ s.transaction_id }}
+                        </a>
+                    </h6>
+                    <span class="badge bg-success">Active</span>
+                </div>
+
+                <div class="small text-muted mb-2">
+                    {% if s.charge_point %}
+                    <i class="bi bi-ev-station me-1"></i>{{ s.charge_point.name }}
+                    {% else %}
+                    <i class="bi bi-ev-station me-1"></i>{{ s.charge_point_id_str }}
+                    {% endif %}
+                    {% if s.connector %}
+                    &middot; Connector #{{ s.connector.connector_id }}
+                    {% endif %}
+                </div>
+
+                {% if s.customer %}
+                <div class="small mb-2">
+                    <i class="bi bi-person me-1"></i>{{ s.customer.full_name }}
+                </div>
+                {% endif %}
+
+                <div class="row text-center mt-3">
+                    <div class="col-4">
+                        <div class="fw-bold text-primary">{{ s.energy_delivered_kwh }}</div>
+                        <div class="small text-muted">kWh</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="fw-bold">{{ s.total_cost }}</div>
+                        <div class="small text-muted">ILS</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="fw-bold">
+                            {% if s.started_at %}{{ s.started_at|timesince }}{% else %}-{% endif %}
+                        </div>
+                        <div class="small text-muted">Duration</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center text-muted py-5">
+                <i class="bi bi-lightning-charge fs-1 d-block mb-3"></i>
+                <p>No active charging sessions.</p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

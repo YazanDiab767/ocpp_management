@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Session Report - OCPP Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">Session Report</h4>
+</div>
+
+<!-- Filters -->
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-2">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-auto">
+                <label class="form-label small mb-0">From</label>
+                <input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}">
+            </div>
+            <div class="col-auto">
+                <label class="form-label small mb-0">To</label>
+                <input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}">
+            </div>
+            <div class="col-auto">
+                <label class="form-label small mb-0">Charger ID</label>
+                <input type="text" name="charge_point_id" class="form-control form-control-sm"
+                       placeholder="e.g. CBI-..." value="{{ cp_id }}">
+            </div>
+            <div class="col-auto align-self-end">
+                <button type="submit" class="btn btn-sm btn-primary">Generate</button>
+                {% if date_from or date_to or cp_id %}
+                <a href="{% url 'report-sessions' %}" class="btn btn-sm btn-outline-secondary">Clear</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Totals -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        {% include "components/stat_widget.html" with icon="bi-receipt" value=totals.session_count label="Total Sessions" color="primary" %}
+    </div>
+    <div class="col-md-4">
+        {% include "components/stat_widget.html" with icon="bi-battery-charging" value=totals.total_energy label="Total Energy (kWh)" color="success" %}
+    </div>
+    <div class="col-md-4">
+        {% include "components/stat_widget.html" with icon="bi-cash-stack" value=totals.total_revenue label="Total Revenue (ILS)" color="info" %}
+    </div>
+</div>
+
+<!-- Sessions Table -->
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Txn ID</th>
+                    <th>Charger</th>
+                    <th>Customer</th>
+                    <th>Energy (kWh)</th>
+                    <th>Cost (ILS)</th>
+                    <th>Tariff</th>
+                    <th>Started</th>
+                    <th>Duration</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in page_obj %}
+                <tr>
+                    <td>
+                        <a href="{% url 'session-detail' s.transaction_id %}" class="text-decoration-none">
+                            #{{ s.transaction_id }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if s.charge_point %}{{ s.charge_point.name }}{% else %}{{ s.charge_point_id_str }}{% endif %}
+                    </td>
+                    <td>
+                        {% if s.customer %}{{ s.customer.full_name }}{% else %}-{% endif %}
+                    </td>
+                    <td>{{ s.energy_delivered_kwh }}</td>
+                    <td>{{ s.total_cost }}</td>
+                    <td>{{ s.tariff_per_kwh }}</td>
+                    <td>{{ s.started_at|date:"d M Y H:i" }}</td>
+                    <td>
+                        {% if s.duration_seconds %}
+                        {% widthratio s.duration_seconds 60 1 %} min
+                        {% else %}-{% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-4">No completed sessions found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% include "includes/pagination.html" %}
+{% endblock %}

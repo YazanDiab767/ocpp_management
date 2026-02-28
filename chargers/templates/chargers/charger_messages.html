@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}OCPP Messages - {{ charger.name }} - OCPP Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-0">OCPP Messages</h4>
+        <p class="text-muted mb-0">{{ charger.name }} ({{ charger.charge_point_id }})</p>
+    </div>
+    <a href="{% url 'charger-detail' charger.pk %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back to Charger
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Time</th>
+                    <th>Direction</th>
+                    <th>Type</th>
+                    <th>Action</th>
+                    <th>Unique ID</th>
+                    <th>Payload</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for msg in page_obj %}
+                <tr>
+                    <td class="text-nowrap">{{ msg.created_at|date:"M d H:i:s" }}</td>
+                    <td><span class="badge bg-{% if msg.direction == 'incoming' %}info{% else %}warning{% endif %}">{{ msg.get_direction_display }}</span></td>
+                    <td>{{ msg.get_message_type_display }}</td>
+                    <td>{{ msg.action|default:"-" }}</td>
+                    <td><code class="small">{{ msg.unique_id|truncatechars:12 }}</code></td>
+                    <td><code class="small">{{ msg.payload|truncatechars:80 }}</code></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center text-muted py-4">No messages recorded.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% include "includes/pagination.html" %}
+{% endblock %}

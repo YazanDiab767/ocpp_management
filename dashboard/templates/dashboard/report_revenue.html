@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Revenue Report - OCPP Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">Revenue Report</h4>
+</div>
+
+<!-- Filters -->
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-2">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-auto">
+                <label class="form-label small mb-0">From</label>
+                <input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}">
+            </div>
+            <div class="col-auto">
+                <label class="form-label small mb-0">To</label>
+                <input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}">
+            </div>
+            <div class="col-auto align-self-end">
+                <button type="submit" class="btn btn-sm btn-primary">Generate</button>
+                {% if date_from or date_to %}
+                <a href="{% url 'report-revenue' %}" class="btn btn-sm btn-outline-secondary">Clear</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Summary -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        {% include "components/stat_widget.html" with icon="bi-cash-stack" value=report.total_revenue label="Total Revenue (ILS)" color="success" %}
+    </div>
+    <div class="col-md-4">
+        {% include "components/stat_widget.html" with icon="bi-battery-charging" value=report.total_energy label="Total Energy (kWh)" color="primary" %}
+    </div>
+    <div class="col-md-4">
+        {% include "components/stat_widget.html" with icon="bi-receipt" value=report.session_count label="Sessions" color="info" %}
+    </div>
+</div>
+
+<!-- Per-Charger Breakdown -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-light">
+        <strong>Revenue by Charger</strong>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Charger ID</th>
+                    <th>Sessions</th>
+                    <th>Energy (kWh)</th>
+                    <th>Revenue (ILS)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in report.per_charger %}
+                <tr>
+                    <td><code>{{ row.charge_point_id_str }}</code></td>
+                    <td>{{ row.sessions }}</td>
+                    <td>{{ row.energy }}</td>
+                    <td><strong>{{ row.revenue }}</strong></td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center text-muted py-4">No revenue data yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

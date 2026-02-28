@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Chargers - OCPP Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">Chargers</h4>
+    <a href="{% url 'charger-create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>Register Charger
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-2">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-auto">
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
+                {% if status_filter %}<a href="{% url 'charger-list' %}" class="btn btn-sm btn-outline-secondary">Clear</a>{% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Charge Point ID</th>
+                    <th>Vendor / Model</th>
+                    <th>Status</th>
+                    <th>Connectors</th>
+                    <th>Last Heartbeat</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cp in page_obj %}
+                <tr>
+                    <td>
+                        <a href="{% url 'charger-detail' cp.pk %}" class="text-decoration-none fw-medium">
+                            {{ cp.name }}
+                        </a>
+                    </td>
+                    <td><code>{{ cp.charge_point_id }}</code></td>
+                    <td>{{ cp.vendor }} {{ cp.model }}</td>
+                    <td>
+                        <span class="status-dot {{ cp.status }}"></span>
+                        {% include "components/status_badge.html" with status=cp.status %}
+                    </td>
+                    <td>{{ cp.connectors.count }}</td>
+                    <td>
+                        {% if cp.last_heartbeat %}
+                        {{ cp.last_heartbeat|timesince }} ago
+                        {% else %}
+                        <span class="text-muted">Never</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'charger-update' cp.pk %}" class="btn btn-sm btn-outline-primary" title="Edit">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4">No chargers registered.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% include "includes/pagination.html" %}
+{% endblock %}

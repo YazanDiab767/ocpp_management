@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - OCPP Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">Dashboard</h4>
+</div>
+
+<!-- KPI Widgets -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        {% include "components/stat_widget.html" with icon="bi-people" value=stats.total_customers label="Active Customers" color="primary" %}
+    </div>
+    <div class="col-md-3">
+        {% include "components/stat_widget.html" with icon="bi-ev-station" value=stats.chargers_online label="Chargers Online" color="success" %}
+    </div>
+    <div class="col-md-3">
+        {% include "components/stat_widget.html" with icon="bi-lightning-charge" value=stats.active_sessions label="Active Sessions" color="warning" %}
+    </div>
+    <div class="col-md-3">
+        {% include "components/stat_widget.html" with icon="bi-cash-stack" value=stats.today_revenue label="Revenue Today (ILS)" color="info" %}
+    </div>
+</div>
+
+<!-- Today's stats row -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        {% include "components/stat_widget.html" with icon="bi-receipt" value=stats.today_sessions label="Sessions Today" color="secondary" %}
+    </div>
+    <div class="col-md-4">
+        {% include "components/stat_widget.html" with icon="bi-battery-charging" value=stats.today_energy label="Energy Today (kWh)" color="success" %}
+    </div>
+    <div class="col-md-4">
+        {% include "components/stat_widget.html" with icon="bi-plug" value=stats.chargers_total label="Total Chargers" color="primary" %}
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Recent Sessions -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">Recent Sessions</h6>
+                <a href="{% url 'session-list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Txn ID</th>
+                            <th>Charger</th>
+                            <th>Customer</th>
+                            <th>Status</th>
+                            <th>Energy</th>
+                            <th>Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in recent_sessions %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'session-detail' s.transaction_id %}" class="text-decoration-none">
+                                    #{{ s.transaction_id }}
+                                </a>
+                            </td>
+                            <td>
+                                {% if s.charge_point %}{{ s.charge_point.name }}{% else %}{{ s.charge_point_id_str }}{% endif %}
+                            </td>
+                            <td>
+                                {% if s.customer %}{{ s.customer.full_name }}{% else %}<span class="text-muted">-</span>{% endif %}
+                            </td>
+                            <td>{% include "components/status_badge.html" with status=s.status %}</td>
+                            <td>{{ s.energy_delivered_kwh }} kWh</td>
+                            <td>{{ s.total_cost }} ILS</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                No sessions yet. Data will appear once charging begins.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charger Status -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">Charger Status</h6>
+                <a href="{% url 'charger-list' %}" class="btn btn-sm btn-outline-primary">Manage</a>
+            </div>
+            <div class="card-body">
+                {% for item in charger_summary %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>
+                        {% include "components/status_badge.html" with status=item.status %}
+                    </span>
+                    <strong>{{ item.count }}</strong>
+                </div>
+                {% empty %}
+                <p class="text-muted text-center py-3 mb-0">No chargers registered yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mt-3">
+            <div class="card-header bg-transparent">
+                <h6 class="mb-0">Quick Actions</h6>
+            </div>
+            <div class="card-body d-grid gap-2">
+                <a href="{% url 'session-active' %}" class="btn btn-outline-success btn-sm">
+                    <i class="bi bi-lightning-charge me-1"></i>Active Sessions
+                </a>
+                <a href="{% url 'report-sessions' %}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-file-earmark-bar-graph me-1"></i>Session Report
+                </a>
+                <a href="{% url 'report-revenue' %}" class="btn btn-outline-info btn-sm">
+                    <i class="bi bi-cash-stack me-1"></i>Revenue Report
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

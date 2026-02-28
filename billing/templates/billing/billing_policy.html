@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Billing Policy - OCPP Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">Billing Policy</h4>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {% for field in form %}
+                    <div class="mb-3">
+                        <label for="{{ field.id_for_label }}" class="form-label">
+                            {{ field.label }}
+                        </label>
+                        {% if field.field.widget.input_type == 'checkbox' %}
+                        <div class="form-check">
+                            {{ field }}
+                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                        </div>
+                        {% else %}
+                        {{ field }}
+                        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                        {% endif %}
+                        {% for error in field.errors %}
+                        <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg me-1"></i>Save Policy
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light">
+                <strong>Current Settings</strong>
+            </div>
+            <div class="card-body">
+                <dl class="mb-0">
+                    <dt>Deduction Mode</dt>
+                    <dd>{{ policy.get_deduction_mode_display }}</dd>
+                    <dt>Minimum Balance to Start</dt>
+                    <dd>{{ policy.minimum_balance_to_start }} {{ policy.currency_code }}</dd>
+                    <dt>Auto-stop Threshold</dt>
+                    <dd>{{ policy.auto_stop_balance_threshold }} {{ policy.currency_code }}</dd>
+                    <dt>Allow Negative Balance</dt>
+                    <dd>{% if policy.allow_negative_balance %}Yes{% else %}No{% endif %}</dd>
+                    <dt>Currency</dt>
+                    <dd>{{ policy.currency_code }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
