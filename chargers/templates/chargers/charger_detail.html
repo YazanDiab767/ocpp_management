@@ -94,6 +94,70 @@
 </div>
 
 {% if charger.status == 'online' %}
+<!-- Remote Start / Stop Charging -->
+<div class="card border-0 shadow-sm mt-4">
+    <div class="card-header bg-transparent"><h6 class="mb-0">Charging Control</h6></div>
+    <div class="card-body">
+        <div class="row g-3">
+            <!-- Remote Start -->
+            <div class="col-md-6">
+                <form method="post" action="{% url 'charger-command' charger.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="command" value="remote_start">
+                    <div class="card bg-light border-0 p-3">
+                        <h6 class="text-success mb-3"><i class="bi bi-play-circle me-1"></i>Remote Start</h6>
+                        <div class="mb-2">
+                            <label class="form-label small">RFID Card</label>
+                            <select name="id_tag" class="form-select form-select-sm" required>
+                                <option value="">-- Select RFID --</option>
+                                {% for card in rfid_cards %}
+                                <option value="{{ card.id_tag }}">{{ card.id_tag }} {% if card.customer %}({{ card.customer.first_name }} {{ card.customer.last_name }}){% endif %}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small">Connector</label>
+                            <select name="connector_id" class="form-select form-select-sm">
+                                {% for conn in connectors %}
+                                <option value="{{ conn.connector_id }}">Connector {{ conn.connector_id }} ({{ conn.get_connector_type_display|default:"Unknown" }})</option>
+                                {% empty %}
+                                <option value="1">Connector 1</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button class="btn btn-success w-100"><i class="bi bi-play-fill me-1"></i>Start Charging</button>
+                    </div>
+                </form>
+            </div>
+            <!-- Remote Stop -->
+            <div class="col-md-6">
+                <div class="card bg-light border-0 p-3">
+                    <h6 class="text-danger mb-3"><i class="bi bi-stop-circle me-1"></i>Remote Stop</h6>
+                    {% if active_sessions %}
+                        {% for session in active_sessions %}
+                        <form method="post" action="{% url 'charger-command' charger.pk %}" class="mb-2" onsubmit="return confirm('Stop charging session {{ session.transaction_id }}?')">
+                            {% csrf_token %}
+                            <input type="hidden" name="command" value="remote_stop">
+                            <input type="hidden" name="transaction_id" value="{{ session.transaction_id }}">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <small class="text-muted">Txn #{{ session.transaction_id }}</small><br>
+                                    <small>{{ session.id_tag }} {% if session.customer %}({{ session.customer.first_name }}){% endif %}</small><br>
+                                    <small class="text-muted">{{ session.energy_delivered_kwh }} kWh | {{ session.total_cost }} ILS</small>
+                                </div>
+                                <button class="btn btn-danger"><i class="bi bi-stop-fill me-1"></i>Stop</button>
+                            </div>
+                        </form>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted mb-0 py-4 text-center">No active sessions on this charger.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="card border-0 shadow-sm mt-4">
     <div class="card-header bg-transparent"><h6 class="mb-0">Remote Commands</h6></div>
     <div class="card-body">

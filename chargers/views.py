@@ -8,6 +8,8 @@ from chargers.forms import ChargePointForm
 from chargers.models import ChargePoint, Connector
 from ocpp_app.models import OCPPMessage
 from ocpp_app.services import OCPPService
+from rfid.models import RFIDCard
+from sessions.models import ChargingSession
 
 
 @login_required
@@ -47,10 +49,17 @@ def charger_detail(request, pk):
     recent_messages = OCPPMessage.objects.filter(
         charge_point_id=cp.charge_point_id,
     ).order_by('-created_at')[:20]
+    rfid_cards = RFIDCard.objects.filter(status='active').select_related('customer')
+    active_sessions = ChargingSession.objects.filter(
+        charge_point_id_str=cp.charge_point_id,
+        status=ChargingSession.Status.ACTIVE,
+    ).select_related('customer')
     return render(request, 'chargers/charger_detail.html', {
         'charger': cp,
         'connectors': cp.connectors.all(),
         'recent_messages': recent_messages,
+        'rfid_cards': rfid_cards,
+        'active_sessions': active_sessions,
     })
 
 
@@ -104,6 +113,21 @@ def charger_command(request, pk):
         elif command == 'get_config':
             OCPPService.send_get_configuration(cp.charge_point_id)
             messages.success(request, 'GetConfiguration sent. Check the OCPP Log for the response.')
+        elif command == 'remote_start':
+            id_tag = request.POST.get('id_tag', '')
+            connector_id = int(request.POST.get('connector_id', 1))
+            if not id_tag:
+                messages.error(request, 'Please select an RFID card.')
+            else:
+                OCPPService.send_remote_start(cp.charge_point_id, connector_id, id_tag)
+                messages.success(request, f'RemoteStartTransaction sent (idTag={id_tag}, connector={connector_id}).')
+        elif command == 'remote_stop':
+            transaction_id = request.POST.get('transaction_id', '')
+            if not transaction_id:
+                messages.error(request, 'No active session to stop.')
+            else:
+                OCPPService.send_remote_stop(cp.charge_point_id, int(transaction_id))
+                messages.success(request, f'RemoteStopTransaction sent (txn={transaction_id}).')
         else:
             messages.error(request, f'Unknown command: {command}')
     except Exception as e:
