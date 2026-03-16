@@ -12,6 +12,12 @@ class ChargingSession(models.Model):
         FAULTED = 'faulted', 'Faulted'
         INVALID = 'invalid', 'Invalid'
 
+    class BillingStatus(models.TextChoices):
+        PENDING = 'pending', 'Pending'
+        BILLED = 'billed', 'Billed'
+        FAILED = 'failed', 'Failed (needs retry)'
+        NOT_APPLICABLE = 'n/a', 'Not Applicable'
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     transaction_id = models.IntegerField(unique=True, db_index=True)
 
@@ -81,6 +87,13 @@ class ChargingSession(models.Model):
         decimal_places=2,
         default=Decimal('0.00'),
         help_text='Amount already deducted from wallet (for real-time mode)',
+    )
+
+    billing_status = models.CharField(
+        max_length=10,
+        choices=BillingStatus.choices,
+        default=BillingStatus.PENDING,
+        help_text='Tracks whether wallet deduction succeeded',
     )
 
     stop_reason = models.CharField(max_length=50, blank=True, default='')

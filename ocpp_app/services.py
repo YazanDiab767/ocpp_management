@@ -73,3 +73,59 @@ class OCPPService:
             'action': 'Reset',
             'payload': {'type': reset_type},
         })
+
+    @staticmethod
+    def send_trigger_message(charge_point_id, requested_message, connector_id=None):
+        channel_layer = get_channel_layer()
+        group_name = f'cp_{charge_point_id}'
+        msg_id = str(uuid.uuid4())
+
+        payload = {'requestedMessage': requested_message}
+        if connector_id is not None:
+            payload['connectorId'] = connector_id
+
+        async_to_sync(channel_layer.group_send)(group_name, {
+            'type': 'ocpp.send_call',
+            'unique_id': msg_id,
+            'action': 'TriggerMessage',
+            'payload': payload,
+        })
+        logger.info(
+            'Sent TriggerMessage (%s) to %s',
+            requested_message, charge_point_id,
+        )
+
+    @staticmethod
+    def send_get_configuration(charge_point_id, keys=None):
+        channel_layer = get_channel_layer()
+        group_name = f'cp_{charge_point_id}'
+        msg_id = str(uuid.uuid4())
+
+        payload = {}
+        if keys:
+            payload['key'] = keys
+
+        async_to_sync(channel_layer.group_send)(group_name, {
+            'type': 'ocpp.send_call',
+            'unique_id': msg_id,
+            'action': 'GetConfiguration',
+            'payload': payload,
+        })
+        logger.info('Sent GetConfiguration to %s', charge_point_id)
+
+    @staticmethod
+    def send_change_configuration(charge_point_id, key, value):
+        channel_layer = get_channel_layer()
+        group_name = f'cp_{charge_point_id}'
+        msg_id = str(uuid.uuid4())
+
+        async_to_sync(channel_layer.group_send)(group_name, {
+            'type': 'ocpp.send_call',
+            'unique_id': msg_id,
+            'action': 'ChangeConfiguration',
+            'payload': {'key': key, 'value': value},
+        })
+        logger.info(
+            'Sent ChangeConfiguration to %s: %s=%s',
+            charge_point_id, key, value,
+        )

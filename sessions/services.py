@@ -33,14 +33,6 @@ class SessionService:
         """
         # Authorize the tag
         auth_result = RFIDService.authorize_id_tag(id_tag)
-
-        # TESTING
-
-        auth_result['status'] = 'Accepted'
-        id_tag = '123456789'
-
-        # End TESTING
-
         if auth_result['status'] != 'Accepted':
             tid = SessionService._generate_transaction_id()
             # Create invalid session for audit
@@ -53,6 +45,47 @@ class SessionService:
                 started_at=_parse_ts(timestamp),
             )
             return tid, {'status': auth_result['status']}
+
+        # Prevent concurrent sessions for same RFID card
+        existing_active = ChargingSession.objects.filter(
+            id_tag=id_tag,
+            status=ChargingSession.Status.ACTIVE,
+        ).first()
+        if existing_active:
+            logger.warning(
+                'StartTransaction rejected: idTag %s already has active session txn=%s',
+                id_tag, existing_active.transaction_id,
+            )
+            tid = SessionService._generate_transaction_id()
+            ChargingSession.objects.create(
+                transaction_id=tid,
+                charge_point_id_str=charge_point_id,
+                id_tag=id_tag,
+                meter_start_wh=meter_start,
+                status=ChargingSession.Status.INVALID,
+                stop_reason='ConcurrentTx',
+                started_at=_parse_ts(timestamp),
+            )
+            return tid, {'status': 'ConcurrentTx'}
+
+        # Block if no active tariff configured (would result in free charging)
+        tariff_price = TariffService.get_active_price_per_kwh()
+        if tariff_price <= 0:
+            logger.error(
+                'StartTransaction rejected: no active tariff configured (price=%.4f)',
+                tariff_price,
+            )
+            tid = SessionService._generate_transaction_id()
+            ChargingSession.objects.create(
+                transaction_id=tid,
+                charge_point_id_str=charge_point_id,
+                id_tag=id_tag,
+                meter_start_wh=meter_start,
+                status=ChargingSession.Status.INVALID,
+                stop_reason='NoTariff',
+                started_at=_parse_ts(timestamp),
+            )
+            return tid, {'status': 'Blocked'}
 
         # Get customer from RFID
         customer = RFIDService.get_customer_for_id_tag(id_tag)
@@ -96,8 +129,7 @@ class SessionService:
         except Exception:
             pass
 
-        # Snapshot tariff
-        tariff_price = TariffService.get_active_price_per_kwh()
+        # tariff_price already fetched above (zero-tariff check)
 
         # Generate transaction ID and create session
         tid = SessionService._generate_transaction_id()
@@ -135,32 +167,33 @@ class SessionService:
         Called by StopTransaction OCPP handler.
         Finalizes session, calculates cost, deducts from wallet.
         """
-        try:
-            session = ChargingSession.objects.select_related(
-                'customer', 'customer__wallet',
-            ).get(transaction_id=transaction_id)
-        except ChargingSession.DoesNotExist:
-            logger.warning('StopTransaction for unknown txn=%s', transaction_id)
-            return
-
-        if session.status != ChargingSession.Status.ACTIVE:
-            logger.warning('StopTransaction for non-active session txn=%s (status=%s)',
-                           transaction_id, session.status)
-            return
-
         stopped = _parse_ts(timestamp) or timezone.now()
 
-        # Calculate energy
-        energy_wh = max(0, meter_stop - session.meter_start_wh)
-        energy_kwh = Decimal(energy_wh) / Decimal('1000')
-
-        # Calculate duration
-        duration = None
-        if session.started_at:
-            delta = stopped - session.started_at
-            duration = int(delta.total_seconds())
-
         with transaction.atomic():
+            # Lock the session row to prevent race with concurrent MeterValues
+            try:
+                session = ChargingSession.objects.select_for_update().select_related(
+                    'customer', 'customer__wallet',
+                ).get(transaction_id=transaction_id)
+            except ChargingSession.DoesNotExist:
+                logger.warning('StopTransaction for unknown txn=%s', transaction_id)
+                return
+
+            if session.status != ChargingSession.Status.ACTIVE:
+                logger.warning('StopTransaction for non-active session txn=%s (status=%s)',
+                               transaction_id, session.status)
+                return
+
+            # Calculate energy
+            energy_wh = max(0, meter_stop - session.meter_start_wh)
+            energy_kwh = Decimal(energy_wh) / Decimal('1000')
+
+            # Calculate duration
+            duration = None
+            if session.started_at:
+                delta = stopped - session.started_at
+                duration = int(delta.total_seconds())
+
             session.meter_stop_wh = meter_stop
             session.energy_delivered_wh = energy_wh
             session.energy_delivered_kwh = energy_kwh.quantize(Decimal('0.001'))
@@ -192,18 +225,6 @@ class SessionService:
         Called by MeterValues OCPP handler.
         Stores meter readings, updates session energy, triggers real-time billing.
         """
-        session = None
-        if transaction_id:
-            try:
-                session = ChargingSession.objects.select_related(
-                    'customer', 'customer__wallet',
-                ).get(
-                    transaction_id=transaction_id,
-                    status=ChargingSession.Status.ACTIVE,
-                )
-            except ChargingSession.DoesNotExist:
-                pass
-
         # Resolve connector
         connector_obj = None
         try:
@@ -216,74 +237,103 @@ class SessionService:
             pass
 
         latest_energy_wh = None
+        auto_stop_needed = False
 
-        for mv_group in meter_values_payload:
-            ts = _parse_ts(mv_group.get('timestamp')) or timezone.now()
-            sampled_values = mv_group.get('sampledValue', [])
-
-            for sv in sampled_values:
-                measurand = sv.get('measurand', 'Energy.Active.Import.Register')
-                value = sv.get('value', '0')
-                unit = sv.get('unit', 'Wh')
-                phase = sv.get('phase', '')
-                context = sv.get('context', 'Sample.Periodic')
-                location = sv.get('location', 'Outlet')
-                fmt = sv.get('format', 'Raw')
-
-                if session:
-                    MeterValue.objects.create(
-                        session=session,
-                        connector=connector_obj,
-                        timestamp=ts,
-                        measurand=measurand,
-                        value=value,
-                        unit=unit,
-                        phase=phase,
-                        context=context,
-                        location=location,
-                        format=fmt,
+        with transaction.atomic():
+            session = None
+            if transaction_id:
+                try:
+                    session = ChargingSession.objects.select_for_update().select_related(
+                        'customer', 'customer__wallet',
+                    ).get(
+                        transaction_id=transaction_id,
+                        status=ChargingSession.Status.ACTIVE,
                     )
+                except ChargingSession.DoesNotExist:
+                    pass
 
-                # Track energy for session update
-                if measurand == 'Energy.Active.Import.Register':
-                    try:
-                        val = Decimal(value)
-                        if unit == 'kWh':
-                            val = val * Decimal('1000')
-                        latest_energy_wh = int(val)
-                    except Exception:
-                        pass
+            for mv_group in meter_values_payload:
+                ts = _parse_ts(mv_group.get('timestamp')) or timezone.now()
+                sampled_values = mv_group.get('sampledValue', [])
 
-        # Update session with latest energy reading
-        if session and latest_energy_wh is not None:
-            energy_wh = max(0, latest_energy_wh - session.meter_start_wh)
-            energy_kwh = Decimal(energy_wh) / Decimal('1000')
+                for sv in sampled_values:
+                    measurand = sv.get('measurand', 'Energy.Active.Import.Register')
+                    value = sv.get('value', '0')
+                    unit = sv.get('unit', 'Wh')
+                    phase = sv.get('phase', '')
+                    context = sv.get('context', 'Sample.Periodic')
+                    location = sv.get('location', 'Outlet')
+                    fmt = sv.get('format', 'Raw')
 
-            session.energy_delivered_wh = energy_wh
-            session.energy_delivered_kwh = energy_kwh.quantize(Decimal('0.001'))
-            session.total_cost = BillingService.calculate_cost(energy_kwh, session.tariff_per_kwh)
-            session.save(update_fields=[
-                'energy_delivered_wh', 'energy_delivered_kwh', 'total_cost', 'updated_at',
-            ])
+                    if session:
+                        MeterValue.objects.create(
+                            session=session,
+                            connector=connector_obj,
+                            timestamp=ts,
+                            measurand=measurand,
+                            value=value,
+                            unit=unit,
+                            phase=phase,
+                            context=context,
+                            location=location,
+                            format=fmt,
+                        )
 
-            # Real-time billing deduction
-            BillingService.process_realtime_deduction(session)
+                    # Track energy for session update
+                    if measurand == 'Energy.Active.Import.Register':
+                        try:
+                            val = Decimal(value)
+                            if unit == 'kWh':
+                                val = val * Decimal('1000')
+                            latest_energy_wh = int(val)
+                        except Exception:
+                            pass
 
-            # Check auto-stop
-            if BillingService.should_auto_stop(session):
-                logger.warning(
-                    'Auto-stop triggered for session %s (low balance)',
+            # Update session with latest energy reading
+            if session and latest_energy_wh is not None:
+                # Meter rollover detection: if new reading < last known,
+                # the charger likely rebooted. Keep the higher value.
+                if latest_energy_wh < session.meter_start_wh and session.energy_delivered_wh > 0:
+                    logger.warning(
+                        'Meter rollover detected for session %s: new=%d < start=%d. '
+                        'Keeping last known energy=%d Wh',
+                        session.transaction_id, latest_energy_wh,
+                        session.meter_start_wh, session.energy_delivered_wh,
+                    )
+                    # Don't update energy — keep the last valid calculation
+                else:
+                    energy_wh = max(0, latest_energy_wh - session.meter_start_wh)
+                    energy_kwh = Decimal(energy_wh) / Decimal('1000')
+
+                    session.energy_delivered_wh = energy_wh
+                    session.energy_delivered_kwh = energy_kwh.quantize(Decimal('0.001'))
+                    session.total_cost = BillingService.calculate_cost(energy_kwh, session.tariff_per_kwh)
+                    session.save(update_fields=[
+                        'energy_delivered_wh', 'energy_delivered_kwh', 'total_cost', 'updated_at',
+                    ])
+
+                    # Real-time billing deduction
+                    BillingService.process_realtime_deduction(session)
+
+                    # Check auto-stop (send outside atomic block)
+                    if BillingService.should_auto_stop(session):
+                        auto_stop_needed = True
+
+        # Send auto-stop outside the atomic block to avoid holding locks
+        if auto_stop_needed and session:
+            logger.warning(
+                'Auto-stop triggered for session %s (low balance)',
+                session.transaction_id,
+            )
+            try:
+                from ocpp_app.services import OCPPService
+                OCPPService.send_remote_stop(
+                    session.charge_point_id_str,
                     session.transaction_id,
                 )
-                try:
-                    from ocpp_app.services import OCPPService
-                    OCPPService.send_remote_stop(
-                        session.charge_point_id_str,
-                        session.transaction_id,
-                    )
-                except Exception:
-                    logger.exception('Failed to send auto-stop for session %s',
-                                     session.transaction_id)
+            except Exception:
+                logger.exception('Failed to send auto-stop for session %s',
+                                 session.transaction_id)
 
     @staticmethod
     def _store_transaction_data(session, transaction_data):
@@ -303,6 +353,56 @@ class SessionService:
                     location=sv.get('location', 'Outlet'),
                     format=sv.get('format', 'Raw'),
                 )
+
+    @staticmethod
+    def handle_charger_disconnect(charge_point_id):
+        """
+        Called when a charger disconnects unexpectedly.
+        Finalizes any orphaned ACTIVE sessions with last known meter values.
+        """
+        orphaned = ChargingSession.objects.select_related(
+            'customer', 'customer__wallet',
+        ).filter(
+            charge_point_id_str=charge_point_id,
+            status=ChargingSession.Status.ACTIVE,
+        )
+        for session in orphaned:
+            logger.warning(
+                'Orphaned session detected on disconnect: txn=%s cp=%s',
+                session.transaction_id, charge_point_id,
+            )
+            try:
+                stopped = timezone.now()
+                energy_wh = session.energy_delivered_wh  # Use last known value
+                energy_kwh = Decimal(energy_wh) / Decimal('1000')
+
+                duration = None
+                if session.started_at:
+                    duration = int((stopped - session.started_at).total_seconds())
+
+                with transaction.atomic():
+                    session.meter_stop_wh = session.meter_start_wh + energy_wh
+                    session.energy_delivered_wh = energy_wh
+                    session.energy_delivered_kwh = energy_kwh.quantize(Decimal('0.001'))
+                    session.status = ChargingSession.Status.FAULTED
+                    session.stop_reason = 'PowerLoss'
+                    session.stopped_at = stopped
+                    session.duration_seconds = duration
+                    session.save(update_fields=[
+                        'meter_stop_wh', 'energy_delivered_wh', 'energy_delivered_kwh',
+                        'status', 'stop_reason', 'stopped_at', 'duration_seconds', 'updated_at',
+                    ])
+
+                    # Bill for energy already delivered
+                    BillingService.finalize_session_billing(session)
+
+                logger.info(
+                    'Orphaned session finalized: txn=%s energy=%.3f kWh cost=%.2f',
+                    session.transaction_id, energy_kwh, session.total_cost,
+                )
+            except Exception:
+                logger.exception('Failed to finalize orphaned session txn=%s',
+                                 session.transaction_id)
 
     @staticmethod
     def get_active_sessions():

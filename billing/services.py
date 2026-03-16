@@ -105,9 +105,17 @@ class BillingService:
         """
         Called at session end. For end-of-session mode, deducts the full cost.
         For real-time mode, deducts any remaining difference.
+        Sets billing_status to track success/failure for retry.
         """
+        from sessions.models import ChargingSession
+
         if not session.customer:
             logger.warning('No customer for session %s, skipping billing', session.transaction_id)
+            session.billing_status = ChargingSession.BillingStatus.NOT_APPLICABLE
+            session.total_cost = BillingService.calculate_cost(
+                session.energy_delivered_kwh, session.tariff_per_kwh,
+            )
+            session.save(update_fields=['billing_status', 'total_cost', 'updated_at'])
             return
 
         total_cost = BillingService.calculate_cost(
@@ -126,15 +134,21 @@ class BillingService:
                     description=f'Charging session {session.transaction_id} finalized',
                 )
                 session.cost_deducted += remaining
+                session.billing_status = ChargingSession.BillingStatus.BILLED
             except Exception:
                 logger.exception('Failed final deduction for session %s', session.transaction_id)
+                session.billing_status = ChargingSession.BillingStatus.FAILED
+        else:
+            # All already deducted in real-time mode
+            session.billing_status = ChargingSession.BillingStatus.BILLED
 
         session.total_cost = total_cost
-        session.save(update_fields=['total_cost', 'cost_deducted', 'updated_at'])
+        session.save(update_fields=['total_cost', 'cost_deducted', 'billing_status', 'updated_at'])
         logger.info(
-            'Session %s billing finalized: %.2f ILS (%.3f kWh @ %.4f ILS/kWh)',
+            'Session %s billing finalized: %.2f ILS (%.3f kWh @ %.4f ILS/kWh) billing_status=%s',
             session.transaction_id, total_cost,
             session.energy_delivered_kwh, session.tariff_per_kwh,
+            session.billing_status,
         )
 
     @staticmethod

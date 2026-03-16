@@ -2,10 +2,12 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from chargers.forms import ChargePointForm
 from chargers.models import ChargePoint, Connector
 from ocpp_app.models import OCPPMessage
+from ocpp_app.services import OCPPService
 
 
 @login_required
@@ -68,6 +70,46 @@ def charger_update(request, pk):
         'title': 'Edit Charger',
         'charger': cp,
     })
+
+
+@login_required
+@require_POST
+def charger_command(request, pk):
+    cp = get_object_or_404(ChargePoint, pk=pk)
+    command = request.POST.get('command')
+
+    if cp.status != ChargePoint.Status.ONLINE:
+        messages.error(request, 'Charger is offline. Cannot send commands.')
+        return redirect('charger-detail', pk=cp.pk)
+
+    try:
+        if command == 'reset_soft':
+            OCPPService.send_reset(cp.charge_point_id, 'Soft')
+            messages.success(request, 'Soft Reset command sent.')
+        elif command == 'reset_hard':
+            OCPPService.send_reset(cp.charge_point_id, 'Hard')
+            messages.warning(request, 'Hard Reset command sent.')
+        elif command == 'trigger_heartbeat':
+            OCPPService.send_trigger_message(cp.charge_point_id, 'Heartbeat')
+            messages.success(request, 'TriggerMessage (Heartbeat) sent.')
+        elif command == 'trigger_status':
+            OCPPService.send_trigger_message(cp.charge_point_id, 'StatusNotification')
+            messages.success(request, 'TriggerMessage (StatusNotification) sent.')
+        elif command == 'trigger_meter':
+            OCPPService.send_trigger_message(cp.charge_point_id, 'MeterValues')
+            messages.success(request, 'TriggerMessage (MeterValues) sent.')
+        elif command == 'trigger_boot':
+            OCPPService.send_trigger_message(cp.charge_point_id, 'BootNotification')
+            messages.success(request, 'TriggerMessage (BootNotification) sent.')
+        elif command == 'get_config':
+            OCPPService.send_get_configuration(cp.charge_point_id)
+            messages.success(request, 'GetConfiguration sent. Check the OCPP Log for the response.')
+        else:
+            messages.error(request, f'Unknown command: {command}')
+    except Exception as e:
+        messages.error(request, f'Failed to send command: {e}')
+
+    return redirect('charger-detail', pk=cp.pk)
 
 
 @login_required

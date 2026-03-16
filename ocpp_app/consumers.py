@@ -44,6 +44,14 @@ class OCPPConsumer(WebsocketConsumer):
             self.group_name, self.channel_name,
         )
         ChargerService.set_offline(self.charge_point_id)
+
+        # Handle orphaned active sessions (power/internet outage)
+        try:
+            from sessions.services import SessionService
+            SessionService.handle_charger_disconnect(self.charge_point_id)
+        except Exception:
+            logger.exception('Error handling orphaned sessions for %s', self.charge_point_id)
+
         logger.info('Charge point disconnected: %s (code=%s)', self.charge_point_id, close_code)
 
     def receive(self, text_data=None, bytes_data=None):

@@ -1,7 +1,10 @@
+import logging
 from datetime import datetime, timezone
 
 from chargers.services import ChargerService
 from ocpp_app.handlers.base import BaseHandler
+
+logger = logging.getLogger('ocpp')
 
 
 class BootNotificationHandler(BaseHandler):
@@ -12,6 +15,13 @@ class BootNotificationHandler(BaseHandler):
         model = payload.get('chargePointModel', '')
         serial = payload.get('chargePointSerialNumber', '')
         firmware = payload.get('firmwareVersion', '')
+
+        # Finalize any orphaned sessions from before reboot
+        try:
+            from sessions.services import SessionService
+            SessionService.handle_charger_disconnect(charge_point_id)
+        except Exception:
+            logger.exception('Error cleaning up sessions on boot for %s', charge_point_id)
 
         cp, status = ChargerService.handle_boot(
             charge_point_id=charge_point_id,

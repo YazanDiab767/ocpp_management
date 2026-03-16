@@ -1,0 +1,72 @@
+databases:
+  - name: ocpp-db
+    plan: starter
+    databaseName: ocpp_management
+    user: ocpp_user
+
+services:
+  # Redis for WebSocket channel layer
+  - type: redis
+    name: ocpp-redis
+    plan: starter
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
+
+  # Main web service (Daphne ASGI - handles HTTP + WebSocket)
+  - type: web
+    name: ocpp-management
+    runtime: python
+    plan: starter
+    buildCommand: ./build.sh
+    startCommand: daphne -b 0.0.0.0 -p $PORT ocpp_management.asgi:application
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: ocpp-management.onrender.com
+      - key: CSRF_TRUSTED_ORIGINS
+        value: https://ocpp-management.onrender.com
+      - key: SECURE_SSL_REDIRECT
+        value: "False"
+      - key: DB_ENGINE
+        value: postgresql
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ocpp-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: ocpp-redis
+          type: redis
+          property: connectionString
+      - key: PYTHON_VERSION
+        value: "3.12.3"
+      - key: OCPP_ACCEPT_UNKNOWN_CHARGERS
+        value: "False"
+
+  # Background worker for session cleanup
+  - type: worker
+    name: ocpp-cleanup
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: sh -c "while true; do python manage.py cleanup_sessions; sleep 300; done"
+    envVars:
+      - key: SECRET_KEY
+        fromService:
+          name: ocpp-management
+          type: web
+          envVarKey: SECRET_KEY
+      - key: DB_ENGINE
+        value: postgresql
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ocpp-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: ocpp-redis
+          type: redis
+          property: connectionString

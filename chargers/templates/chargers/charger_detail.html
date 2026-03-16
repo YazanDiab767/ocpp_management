@@ -93,6 +93,66 @@
     </div>
 </div>
 
+{% if charger.status == 'online' %}
+<div class="card border-0 shadow-sm mt-4">
+    <div class="card-header bg-transparent"><h6 class="mb-0">Remote Commands</h6></div>
+    <div class="card-body">
+        <p class="text-muted small mb-3">Send OCPP commands to the charger to test communication.</p>
+        <div class="row g-2">
+            <div class="col-auto">
+                <form method="post" action="{% url 'charger-command' charger.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="command" value="trigger_heartbeat">
+                    <button class="btn btn-outline-primary btn-sm"><i class="bi bi-heart-pulse me-1"></i>Trigger Heartbeat</button>
+                </form>
+            </div>
+            <div class="col-auto">
+                <form method="post" action="{% url 'charger-command' charger.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="command" value="trigger_status">
+                    <button class="btn btn-outline-primary btn-sm"><i class="bi bi-info-circle me-1"></i>Trigger StatusNotification</button>
+                </form>
+            </div>
+            <div class="col-auto">
+                <form method="post" action="{% url 'charger-command' charger.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="command" value="trigger_boot">
+                    <button class="btn btn-outline-primary btn-sm"><i class="bi bi-bootstrap-reboot me-1"></i>Trigger BootNotification</button>
+                </form>
+            </div>
+            <div class="col-auto">
+                <form method="post" action="{% url 'charger-command' charger.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="command" value="trigger_meter">
+                    <button class="btn btn-outline-primary btn-sm"><i class="bi bi-speedometer me-1"></i>Trigger MeterValues</button>
+                </form>
+            </div>
+            <div class="col-auto">
+                <form method="post" action="{% url 'charger-command' charger.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="command" value="get_config">
+                    <button class="btn btn-outline-info btn-sm"><i class="bi bi-gear me-1"></i>Get Configuration</button>
+                </form>
+            </div>
+            <div class="col-auto">
+                <form method="post" action="{% url 'charger-command' charger.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="command" value="reset_soft">
+                    <button class="btn btn-outline-warning btn-sm"><i class="bi bi-arrow-clockwise me-1"></i>Soft Reset</button>
+                </form>
+            </div>
+            <div class="col-auto">
+                <form method="post" action="{% url 'charger-command' charger.pk %}" onsubmit="return confirm('Are you sure? This will hard-reset the charger.')">
+                    {% csrf_token %}
+                    <input type="hidden" name="command" value="reset_hard">
+                    <button class="btn btn-outline-danger btn-sm"><i class="bi bi-exclamation-triangle me-1"></i>Hard Reset</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <div class="card border-0 shadow-sm mt-4">
     <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
         <h6 class="mb-0">Recent OCPP Messages</h6>
