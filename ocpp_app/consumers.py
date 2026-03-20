@@ -20,6 +20,20 @@ class OCPPConsumer(WebsocketConsumer):
     """
 
     def connect(self):
+        # Log everything about the incoming connection for debugging
+        client = self.scope.get('client', ('unknown', 0))
+        headers = {
+            k.decode(): v.decode()
+            for k, v in self.scope.get('headers', [])
+        }
+        logger.info(
+            '>>> INCOMING WebSocket from %s:%s | path=%s | subprotocols=%s',
+            client[0], client[1],
+            self.scope.get('path', '?'),
+            self.scope.get('subprotocols', []),
+        )
+        logger.debug('>>> Headers: %s', headers)
+
         self.charge_point_id = self.scope['url_route']['kwargs']['charge_point_id']
         self.group_name = f'cp_{self.charge_point_id}'
 
