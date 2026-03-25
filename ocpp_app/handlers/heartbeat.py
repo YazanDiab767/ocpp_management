@@ -10,5 +10,5 @@ class HeartbeatHandler(BaseHandler):
     def handle(self, charge_point_id, payload, **kwargs):
         ChargerService.update_heartbeat(charge_point_id)
         return {
-            'currentTime': datetime.now(timezone.utc).isoformat(),
+            'currentTime': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
         }

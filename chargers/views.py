@@ -50,10 +50,15 @@ def charger_detail(request, pk):
         charge_point_id=cp.charge_point_id,
     ).order_by('-created_at')[:20]
     rfid_cards = RFIDCard.objects.filter(status='active').select_related('customer')
-    active_sessions = ChargingSession.objects.filter(
+    active_sessions = list(ChargingSession.objects.filter(
         charge_point_id_str=cp.charge_point_id,
         status=ChargingSession.Status.ACTIVE,
-    ).select_related('customer')
+    ).select_related('customer'))
+    for s in active_sessions:
+        latest_soc = s.meter_values.filter(measurand='SoC').order_by('-timestamp').first()
+        latest_voltage = s.meter_values.filter(measurand='Voltage').order_by('-timestamp').first()
+        s.live_soc = latest_soc.value if latest_soc else None
+        s.live_voltage = latest_voltage.value if latest_voltage else None
     return render(request, 'chargers/charger_detail.html', {
         'charger': cp,
         'connectors': cp.connectors.all(),

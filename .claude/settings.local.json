@@ -8,7 +8,9 @@
       "Bash(DJANGO_SETTINGS_MODULE=ocpp_management.settings python -c \"import django; django.setup\\(\\); from sessions.services import SessionService; from billing.services import BillingService; from ocpp_app.consumers import OCPPConsumer; print\\(''All imports OK''\\)\")",
       "Bash(python manage.py cleanup_sessions --dry-run)",
       "Bash(python manage.py check)",
-      "Bash(python manage.py collectstatic --noinput)"
+      "Bash(python manage.py collectstatic --noinput)",
+      "Bash(source venv/Scripts/activate)",
+      "Bash(python manage.py shell -c \":*)"
     ]
   }
 }

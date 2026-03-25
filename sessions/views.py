@@ -58,9 +58,19 @@ def session_detail(request, transaction_id):
 
 @login_required
 def active_sessions(request):
-    sessions = ChargingSession.objects.filter(
+    sessions = list(ChargingSession.objects.filter(
         status=ChargingSession.Status.ACTIVE,
-    ).select_related('charge_point', 'connector', 'customer')
+    ).select_related('charge_point', 'connector', 'customer'))
+
+    for s in sessions:
+        latest_soc = s.meter_values.filter(measurand='SoC').order_by('-timestamp').first()
+        latest_voltage = s.meter_values.filter(measurand='Voltage').order_by('-timestamp').first()
+        latest_current = s.meter_values.filter(measurand='Current.Import').order_by('-timestamp').first()
+        latest_power = s.meter_values.filter(measurand='Power.Active.Import').order_by('-timestamp').first()
+        s.live_soc = latest_soc.value if latest_soc else None
+        s.live_voltage = latest_voltage.value if latest_voltage else None
+        s.live_current = latest_current.value if latest_current else None
+        s.live_power = latest_power.value if latest_power else None
 
     return render(request, 'sessions/active_sessions.html', {
         'sessions': sessions,

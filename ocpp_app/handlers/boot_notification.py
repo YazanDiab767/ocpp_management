@@ -16,12 +16,13 @@ class BootNotificationHandler(BaseHandler):
         serial = payload.get('chargePointSerialNumber', '')
         firmware = payload.get('firmwareVersion', '')
 
-        # Finalize any orphaned sessions from before reboot
+        # Reactivate sessions that were faulted by a recent server restart
+        # (disconnect handler marks them as faulted, but charger is still charging)
         try:
             from sessions.services import SessionService
-            SessionService.handle_charger_disconnect(charge_point_id)
+            SessionService.reactivate_on_reconnect(charge_point_id)
         except Exception:
-            logger.exception('Error cleaning up sessions on boot for %s', charge_point_id)
+            logger.exception('Error reactivating sessions on boot for %s', charge_point_id)
 
         cp, status = ChargerService.handle_boot(
             charge_point_id=charge_point_id,
@@ -34,7 +35,7 @@ class BootNotificationHandler(BaseHandler):
         interval = cp.heartbeat_interval if cp else 300
 
         return {
-            'currentTime': datetime.now(timezone.utc).isoformat(),
+            'currentTime': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
             'interval': interval,
             'status': status,
         }

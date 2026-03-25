@@ -59,6 +59,36 @@
                         <div class="small text-muted">Duration</div>
                     </div>
                 </div>
+
+                {% if s.live_soc or s.live_voltage %}
+                <hr class="my-2">
+                <div class="row text-center">
+                    {% if s.live_soc %}
+                    <div class="col-3">
+                        <div class="fw-bold text-success">{{ s.live_soc }}%</div>
+                        <div class="small text-muted">Battery</div>
+                    </div>
+                    {% endif %}
+                    {% if s.live_voltage %}
+                    <div class="col-3">
+                        <div class="fw-bold">{{ s.live_voltage }}</div>
+                        <div class="small text-muted">Volts</div>
+                    </div>
+                    {% endif %}
+                    {% if s.live_current %}
+                    <div class="col-3">
+                        <div class="fw-bold">{{ s.live_current }}</div>
+                        <div class="small text-muted">Amps</div>
+                    </div>
+                    {% endif %}
+                    {% if s.live_power %}
+                    <div class="col-3">
+                        <div class="fw-bold">{{ s.live_power }}</div>
+                        <div class="small text-muted">kW</div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>

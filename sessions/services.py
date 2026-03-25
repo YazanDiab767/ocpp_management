@@ -172,7 +172,9 @@ class SessionService:
         with transaction.atomic():
             # Lock the session row to prevent race with concurrent MeterValues
             try:
-                session = ChargingSession.objects.select_for_update().select_related(
+                session = ChargingSession.objects.select_for_update(
+                    of=('self',)
+                ).select_related(
                     'customer', 'customer__wallet',
                 ).get(transaction_id=transaction_id)
             except ChargingSession.DoesNotExist:
@@ -243,7 +245,9 @@ class SessionService:
             session = None
             if transaction_id:
                 try:
-                    session = ChargingSession.objects.select_for_update().select_related(
+                    session = ChargingSession.objects.select_for_update(
+                        of=('self',)
+                    ).select_related(
                         'customer', 'customer__wallet',
                     ).get(
                         transaction_id=transaction_id,
@@ -353,6 +357,36 @@ class SessionService:
                     location=sv.get('location', 'Outlet'),
                     format=sv.get('format', 'Raw'),
                 )
+
+    @staticmethod
+    def reactivate_on_reconnect(charge_point_id):
+        """
+        Called on BootNotification. Reactivate sessions that were marked as faulted
+        by a recent server restart (within last 5 minutes) — the charger may still
+        be actively charging.
+        """
+        from datetime import timedelta
+        cutoff = timezone.now() - timedelta(minutes=5)
+        recently_faulted = ChargingSession.objects.filter(
+            charge_point_id_str=charge_point_id,
+            status=ChargingSession.Status.FAULTED,
+            stop_reason='PowerLoss',
+            stopped_at__gte=cutoff,
+        )
+        for session in recently_faulted:
+            session.status = ChargingSession.Status.ACTIVE
+            session.stop_reason = ''
+            session.stopped_at = None
+            session.duration_seconds = None
+            session.meter_stop_wh = 0
+            session.save(update_fields=[
+                'status', 'stop_reason', 'stopped_at',
+                'duration_seconds', 'meter_stop_wh', 'updated_at',
+            ])
+            logger.info(
+                'Reactivated session txn=%s on charger reconnect (was faulted by server restart)',
+                session.transaction_id,
+            )
 
     @staticmethod
     def handle_charger_disconnect(charge_point_id):

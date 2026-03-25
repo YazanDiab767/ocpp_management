@@ -144,6 +144,8 @@
                                     <small class="text-muted">Txn #{{ session.transaction_id }}</small><br>
                                     <small>{{ session.id_tag }} {% if session.customer %}({{ session.customer.first_name }}){% endif %}</small><br>
                                     <small class="text-muted">{{ session.energy_delivered_kwh }} kWh | {{ session.total_cost }} ILS</small>
+                                    {% if session.live_soc %}<br><small class="text-success fw-bold">Battery: {{ session.live_soc }}%</small>{% endif %}
+                                    {% if session.live_voltage %}<small class="text-muted"> | {{ session.live_voltage }}V</small>{% endif %}
                                 </div>
                                 <button class="btn btn-danger"><i class="bi bi-stop-fill me-1"></i>Stop</button>
                             </div>
