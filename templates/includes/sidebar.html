@@ -22,6 +22,11 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'rfid-tap-log' %}active{% endif %}" href="{% url 'rfid-tap-log' %}">
+                    <i class="bi bi-card-checklist me-2"></i>Tap Log
+                </a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link {% if 'charger' in request.resolver_match.url_name|default:'' %}active{% endif %}" href="{% url 'charger-list' %}">
                     <i class="bi bi-plug me-2"></i>Chargers
                 </a>

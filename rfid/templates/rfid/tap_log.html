@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}RFID Tap Log - OCPP Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">RFID Tap Log</h4>
+</div>
+
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-2">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-auto flex-grow-1">
+                <input type="text" name="q" value="{{ query }}" class="form-control form-control-sm"
+                       placeholder="Search by ID tag, charger, or customer...">
+            </div>
+            <div class="col-auto">
+                <select name="result" class="form-select form-select-sm">
+                    <option value="">All Results</option>
+                    {% for value, label in result_choices %}
+                    <option value="{{ value }}" {% if result_filter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
+                {% if query or result_filter %}<a href="{% url 'rfid-tap-log' %}" class="btn btn-sm btn-outline-secondary">Clear</a>{% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>ID Tag</th>
+                    <th>Result</th>
+                    <th>Charger</th>
+                    <th>Customer</th>
+                    <th>Card Status</th>
+                    <th>Date & Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tap in page_obj %}
+                <tr>
+                    <td><code class="fs-6">{{ tap.id_tag }}</code></td>
+                    <td>
+                        {% if tap.result == 'Accepted' %}
+                        <span class="badge bg-success">Accepted</span>
+                        {% elif tap.result == 'Blocked' %}
+                        <span class="badge bg-danger">Blocked</span>
+                        {% elif tap.result == 'Expired' %}
+                        <span class="badge bg-warning text-dark">Expired</span>
+                        {% elif tap.result == 'Invalid' %}
+                        <span class="badge bg-danger">Invalid / Unknown</span>
+                        {% elif tap.result == 'ConcurrentTx' %}
+                        <span class="badge bg-info text-dark">Concurrent Tx</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ tap.result }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ tap.charge_point_id|default:"-" }}</td>
+                    <td>
+                        {% if tap.customer_name %}
+                        {{ tap.customer_name }}
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if tap.rfid_card %}
+                        <a href="{% url 'card-detail' tap.rfid_card.pk %}" class="text-decoration-none">
+                            {% include "components/status_badge.html" with status=tap.rfid_card.get_status_display %}
+                        </a>
+                        {% else %}
+                        <span class="badge bg-dark">Not Registered</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ tap.tapped_at|date:"M d, Y H:i:s" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">No tap records found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% include "includes/pagination.html" %}
+{% endblock %}

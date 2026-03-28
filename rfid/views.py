@@ -4,8 +4,32 @@ from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 
 from rfid.forms import RFIDCardCreateForm, RFIDCardUpdateForm, RFIDCardAssignForm
-from rfid.models import RFIDCard
+from rfid.models import RFIDCard, RFIDTapLog
 from rfid.services import RFIDService
+
+
+@login_required
+def tap_log(request):
+    qs = RFIDTapLog.objects.select_related('rfid_card').all()
+    result_filter = request.GET.get('result')
+    if result_filter:
+        qs = qs.filter(result=result_filter)
+    query = request.GET.get('q', '')
+    if query:
+        from django.db.models import Q
+        qs = qs.filter(
+            Q(id_tag__icontains=query)
+            | Q(charge_point_id__icontains=query)
+            | Q(customer_name__icontains=query)
+        )
+    paginator = Paginator(qs, 30)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    return render(request, 'rfid/tap_log.html', {
+        'page_obj': page_obj,
+        'query': query,
+        'result_filter': result_filter,
+        'result_choices': RFIDTapLog.Result.choices,
+    })
 
 
 @login_required

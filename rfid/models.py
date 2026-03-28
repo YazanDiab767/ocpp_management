@@ -2,6 +2,38 @@ from django.conf import settings
 from django.db import models
 
 
+class RFIDTapLog(models.Model):
+    """Records every RFID card tap on any charger, regardless of outcome."""
+
+    class Result(models.TextChoices):
+        ACCEPTED = 'Accepted', 'Accepted'
+        BLOCKED = 'Blocked', 'Blocked'
+        EXPIRED = 'Expired', 'Expired'
+        INVALID = 'Invalid', 'Invalid'
+        CONCURRENT_TX = 'ConcurrentTx', 'Concurrent Transaction'
+
+    id_tag = models.CharField(max_length=20, db_index=True)
+    charge_point_id = models.CharField(max_length=100, blank=True, default='')
+    result = models.CharField(max_length=20, choices=Result.choices)
+    rfid_card = models.ForeignKey(
+        'RFIDCard',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='tap_logs',
+    )
+    customer_name = models.CharField(max_length=200, blank=True, default='')
+    tapped_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        db_table = 'rfid_tap_log'
+        ordering = ['-tapped_at']
+        verbose_name = 'RFID Tap Log'
+        verbose_name_plural = 'RFID Tap Logs'
+
+    def __str__(self):
+        return f'{self.id_tag} - {self.result} @ {self.tapped_at:%Y-%m-%d %H:%M}'
+
+
 class RFIDCard(models.Model):
 
     class Status(models.TextChoices):
