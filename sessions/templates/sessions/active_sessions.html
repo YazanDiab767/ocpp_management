@@ -89,6 +89,26 @@
                     {% endif %}
                 </div>
                 {% endif %}
+
+                <hr class="my-2">
+                <div class="d-flex gap-2">
+                    <form method="post" action="{% url 'session-remote-stop' s.transaction_id %}"
+                          onsubmit="return confirm('Send RemoteStop for session #{{ s.transaction_id }}?')">
+                        {% csrf_token %}
+                        <button class="btn btn-warning btn-sm"><i class="bi bi-stop-circle me-1"></i>Remote Stop</button>
+                    </form>
+                    <form method="post" action="{% url 'session-force-close' s.transaction_id %}"
+                          onsubmit="return confirm('Force-close session #{{ s.transaction_id }}? Use only if stuck.')">
+                        {% csrf_token %}
+                        <button class="btn btn-danger btn-sm"><i class="bi bi-x-octagon me-1"></i>Force Close</button>
+                    </form>
+                    <form method="post" action="{% url 'session-reset-charger' s.transaction_id %}"
+                          onsubmit="return confirm('Send Soft Reset to the charger?')">
+                        {% csrf_token %}
+                        <input type="hidden" name="reset_type" value="Soft">
+                        <button class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-clockwise me-1"></i>Reset</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

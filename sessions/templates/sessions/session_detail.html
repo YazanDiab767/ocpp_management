@@ -7,9 +7,46 @@
         Session #{{ session.transaction_id }}
         {% include "components/status_badge.html" with status=session.status %}
     </h4>
-    <a href="{% url 'session-list' %}" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left me-1"></i>Back
-    </a>
+    <div class="d-flex gap-2">
+        {% if session.status == 'active' %}
+        <form method="post" action="{% url 'session-remote-stop' session.transaction_id %}"
+              onsubmit="return confirm('Send RemoteStop to the charger for session #{{ session.transaction_id }}?')">
+            {% csrf_token %}
+            <button class="btn btn-warning"><i class="bi bi-stop-circle me-1"></i>Remote Stop</button>
+        </form>
+        <form method="post" action="{% url 'session-force-close' session.transaction_id %}"
+              onsubmit="return confirm('Force-close session #{{ session.transaction_id }}? This will finalize billing with the last known energy reading. Use this only if the session is stuck.')">
+            {% csrf_token %}
+            <button class="btn btn-danger"><i class="bi bi-x-octagon me-1"></i>Force Close</button>
+        </form>
+        <div class="dropdown">
+            <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="bi bi-arrow-clockwise me-1"></i>Reset Charger
+            </button>
+            <ul class="dropdown-menu">
+                <li>
+                    <form method="post" action="{% url 'session-reset-charger' session.transaction_id %}"
+                          onsubmit="return confirm('Send Soft Reset to the charger?')">
+                        {% csrf_token %}
+                        <input type="hidden" name="reset_type" value="Soft">
+                        <button class="dropdown-item"><i class="bi bi-arrow-clockwise me-1"></i>Soft Reset</button>
+                    </form>
+                </li>
+                <li>
+                    <form method="post" action="{% url 'session-reset-charger' session.transaction_id %}"
+                          onsubmit="return confirm('Send Hard Reset? This will fully reboot the charger.')">
+                        {% csrf_token %}
+                        <input type="hidden" name="reset_type" value="Hard">
+                        <button class="dropdown-item text-danger"><i class="bi bi-exclamation-triangle me-1"></i>Hard Reset</button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+        {% endif %}
+        <a href="{% url 'session-list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Back
+        </a>
+    </div>
 </div>
 
 <div class="row g-4">

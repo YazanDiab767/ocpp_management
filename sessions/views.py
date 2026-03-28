@@ -1,9 +1,17 @@
+import logging
+
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
+from chargers.models import ChargePoint
 from sessions.models import ChargingSession, MeterValue
+from sessions.services import SessionService
+
+logger = logging.getLogger('ocpp')
 
 
 @login_required
@@ -75,3 +83,89 @@ def active_sessions(request):
     return render(request, 'sessions/active_sessions.html', {
         'sessions': sessions,
     })
+
+
+@login_required
+@require_POST
+def session_remote_stop(request, transaction_id):
+    """Send RemoteStopTransaction to the charger via OCPP."""
+    session = get_object_or_404(ChargingSession, transaction_id=transaction_id)
+
+    if session.status != ChargingSession.Status.ACTIVE:
+        messages.warning(request, f'Session #{transaction_id} is already {session.get_status_display()}.')
+        return redirect('session-detail', transaction_id=transaction_id)
+
+    # Check charger is online
+    try:
+        cp = ChargePoint.objects.get(charge_point_id=session.charge_point_id_str)
+        if cp.status != ChargePoint.Status.ONLINE:
+            messages.error(
+                request,
+                f'Charger {session.charge_point_id_str} is offline. '
+                f'Use "Force Close" instead to close the session on the server side.'
+            )
+            return redirect('session-detail', transaction_id=transaction_id)
+    except ChargePoint.DoesNotExist:
+        messages.error(request, 'Charger not found.')
+        return redirect('session-detail', transaction_id=transaction_id)
+
+    try:
+        from ocpp_app.services import OCPPService
+        OCPPService.send_remote_stop(session.charge_point_id_str, session.transaction_id)
+        messages.success(request, f'RemoteStopTransaction sent to charger for session #{transaction_id}.')
+    except Exception as e:
+        messages.error(request, f'Failed to send RemoteStop: {e}')
+
+    return redirect('session-detail', transaction_id=transaction_id)
+
+
+@login_required
+@require_POST
+def session_force_close(request, transaction_id):
+    """Force-close a stuck session on the server side. Works even if charger is offline."""
+    session = get_object_or_404(ChargingSession, transaction_id=transaction_id)
+
+    if session.status != ChargingSession.Status.ACTIVE:
+        messages.warning(request, f'Session #{transaction_id} is already {session.get_status_display()}.')
+        return redirect('session-detail', transaction_id=transaction_id)
+
+    try:
+        result = SessionService.force_close_session(transaction_id=transaction_id)
+        if result:
+            messages.success(
+                request,
+                f'Session #{transaction_id} force-closed. '
+                f'Energy: {result.energy_delivered_kwh} kWh, Cost: {result.total_cost} ILS.'
+            )
+        else:
+            messages.error(request, f'Session #{transaction_id} not found or already closed.')
+    except Exception as e:
+        messages.error(request, f'Failed to force-close session: {e}')
+
+    return redirect('session-detail', transaction_id=transaction_id)
+
+
+@login_required
+@require_POST
+def session_reset_charger(request, transaction_id):
+    """Send a Soft or Hard Reset to the charger associated with this session."""
+    session = get_object_or_404(ChargingSession, transaction_id=transaction_id)
+    reset_type = request.POST.get('reset_type', 'Soft')
+
+    try:
+        cp = ChargePoint.objects.get(charge_point_id=session.charge_point_id_str)
+        if cp.status != ChargePoint.Status.ONLINE:
+            messages.error(request, f'Charger {session.charge_point_id_str} is offline. Cannot send reset.')
+            return redirect('session-detail', transaction_id=transaction_id)
+    except ChargePoint.DoesNotExist:
+        messages.error(request, 'Charger not found.')
+        return redirect('session-detail', transaction_id=transaction_id)
+
+    try:
+        from ocpp_app.services import OCPPService
+        OCPPService.send_reset(session.charge_point_id_str, reset_type)
+        messages.success(request, f'{reset_type} Reset sent to charger {session.charge_point_id_str}.')
+    except Exception as e:
+        messages.error(request, f'Failed to send reset: {e}')
+
+    return redirect('session-detail', transaction_id=transaction_id)

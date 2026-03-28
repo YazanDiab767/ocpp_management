@@ -439,6 +439,58 @@ class SessionService:
                                  session.transaction_id)
 
     @staticmethod
+    def force_close_session(*, transaction_id, reason='AdminForceClose'):
+        """
+        Force-close a stuck/frozen session from the server side.
+        Works even if the charger is offline. Finalizes billing with
+        the last known energy reading.
+        """
+        stopped = timezone.now()
+
+        with transaction.atomic():
+            try:
+                session = ChargingSession.objects.select_for_update(
+                    of=('self',)
+                ).select_related(
+                    'customer', 'customer__wallet',
+                ).get(transaction_id=transaction_id)
+            except ChargingSession.DoesNotExist:
+                logger.warning('Force-close: unknown txn=%s', transaction_id)
+                return None
+
+            if session.status != ChargingSession.Status.ACTIVE:
+                logger.warning('Force-close: session txn=%s already %s',
+                               transaction_id, session.status)
+                return session
+
+            energy_wh = session.energy_delivered_wh
+            energy_kwh = Decimal(energy_wh) / Decimal('1000')
+
+            duration = None
+            if session.started_at:
+                duration = int((stopped - session.started_at).total_seconds())
+
+            session.meter_stop_wh = session.meter_start_wh + energy_wh
+            session.energy_delivered_wh = energy_wh
+            session.energy_delivered_kwh = energy_kwh.quantize(Decimal('0.001'))
+            session.status = ChargingSession.Status.COMPLETED
+            session.stop_reason = reason
+            session.stopped_at = stopped
+            session.duration_seconds = duration
+            session.save(update_fields=[
+                'meter_stop_wh', 'energy_delivered_wh', 'energy_delivered_kwh',
+                'status', 'stop_reason', 'stopped_at', 'duration_seconds', 'updated_at',
+            ])
+
+            BillingService.finalize_session_billing(session)
+
+        logger.info(
+            'Session force-closed: txn=%s energy=%.3f kWh cost=%.2f ILS reason=%s',
+            transaction_id, energy_kwh, session.total_cost, reason,
+        )
+        return session
+
+    @staticmethod
     def get_active_sessions():
         return ChargingSession.objects.filter(
             status=ChargingSession.Status.ACTIVE,

@@ -10,7 +10,8 @@
       "Bash(python manage.py check)",
       "Bash(python manage.py collectstatic --noinput)",
       "Bash(source venv/Scripts/activate)",
-      "Bash(python manage.py shell -c \":*)"
+      "Bash(python manage.py shell -c \":*)",
+      "Bash(python manage.py makemigrations rfid --name=\"add_rfid_tap_log\")"
     ]
   }
 }
