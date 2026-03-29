@@ -375,12 +375,13 @@ class SessionService:
         )
         for session in recently_faulted:
             session.status = ChargingSession.Status.ACTIVE
+            session.billing_status = ChargingSession.BillingStatus.PENDING
             session.stop_reason = ''
             session.stopped_at = None
             session.duration_seconds = None
             session.meter_stop_wh = 0
             session.save(update_fields=[
-                'status', 'stop_reason', 'stopped_at',
+                'status', 'billing_status', 'stop_reason', 'stopped_at',
                 'duration_seconds', 'meter_stop_wh', 'updated_at',
             ])
             logger.info(
