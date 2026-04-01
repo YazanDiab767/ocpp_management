@@ -68,6 +68,30 @@ class SessionService:
             )
             return tid, {'status': 'ConcurrentTx'}
 
+        # Prevent two sessions on the same connector at the same time
+        if connector_id:
+            existing_on_connector = ChargingSession.objects.filter(
+                charge_point_id_str=charge_point_id,
+                connector__connector_id=connector_id,
+                status=ChargingSession.Status.ACTIVE,
+            ).first()
+            if existing_on_connector:
+                logger.warning(
+                    'StartTransaction rejected: connector %s on %s already has active session txn=%s',
+                    connector_id, charge_point_id, existing_on_connector.transaction_id,
+                )
+                tid = SessionService._generate_transaction_id()
+                ChargingSession.objects.create(
+                    transaction_id=tid,
+                    charge_point_id_str=charge_point_id,
+                    id_tag=id_tag,
+                    meter_start_wh=meter_start,
+                    status=ChargingSession.Status.INVALID,
+                    stop_reason='ConcurrentTx',
+                    started_at=_parse_ts(timestamp),
+                )
+                return tid, {'status': 'ConcurrentTx'}
+
         # Block if no active tariff configured (would result in free charging)
         tariff_price = TariffService.get_active_price_per_kwh()
         if tariff_price <= 0:
