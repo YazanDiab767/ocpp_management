@@ -1,17 +1,77 @@
-/* Offset body for fixed navbar */
-body {
-    padding-top: 56px;
+/* Brand color variables */
+:root {
+    --brand-dark:   #2c2c2c;
+    --brand-darker: #1e1e1e;
+    --brand-gold:   #c8a951;
+    --brand-gold-light: #e0c068;
+    --brand-gold-dim:   rgba(200, 169, 81, 0.15);
 }
 
-/* Sidebar styling */
+
+/* Offset body for fixed navbar */
+body {
+    padding-top: 60px;
+    background-color: #f4f5f7;
+}
+
+
+/* Navbar brand styling */
+.navbar {
+    background-color: var(--brand-dark) !important;
+    border-bottom: 2px solid var(--brand-gold);
+    min-height: 60px;
+}
+
+.navbar-brand {
+    padding: 0;
+}
+
+.navbar-brand img {
+    height: 40px;
+    width: auto;
+    object-fit: contain;
+}
+
+.navbar .nav-link,
+.navbar .dropdown-toggle {
+    color: rgba(255, 255, 255, 0.85) !important;
+    font-size: 0.9rem;
+}
+
+.navbar .nav-link:hover,
+.navbar .dropdown-toggle:hover {
+    color: var(--brand-gold) !important;
+}
+
+.navbar-brand-subtitle {
+    font-size: 0.65rem;
+    color: var(--brand-gold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    line-height: 1;
+    display: block;
+    margin-top: 1px;
+}
+
+.navbar-toggler {
+    border-color: var(--brand-gold) !important;
+}
+
+.navbar-toggler-icon {
+    filter: invert(1);
+}
+
+
+/* Sidebar */
 .sidebar {
     position: fixed;
-    top: 56px;
+    top: 60px;
     bottom: 0;
     left: 0;
     z-index: 100;
     padding: 0;
-    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+    background-color: #ffffff;
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .07);
     overflow-y: auto;
 }
 
@@ -19,40 +79,72 @@ body {
     font-weight: 500;
     color: #555;
     padding: 0.5rem 1rem;
-    font-size: 0.9rem;
+    font-size: 0.875rem;
+    border-right: 3px solid transparent;
+    transition: all 0.15s ease;
 }
 
 .sidebar .nav-link:hover {
-    color: #0d6efd;
-    background-color: rgba(13, 110, 253, 0.05);
+    color: var(--brand-dark);
+    background-color: var(--brand-gold-dim);
+    border-right-color: var(--brand-gold);
 }
 
 .sidebar .nav-link.active {
-    color: #0d6efd;
-    background-color: rgba(13, 110, 253, 0.1);
-    border-right: 3px solid #0d6efd;
+    color: var(--brand-dark);
+    background-color: var(--brand-gold-dim);
+    border-right-color: var(--brand-gold);
+    font-weight: 600;
 }
 
 .sidebar .nav-link .bi {
     width: 20px;
     text-align: center;
+    color: var(--brand-gold);
 }
 
-/* Card hover effect */
+.sidebar .nav-link:hover .bi,
+.sidebar .nav-link.active .bi {
+    color: var(--brand-dark);
+}
+
+.sidebar-section-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #aaa;
+    padding: 0.75rem 1rem 0.25rem;
+}
+
+
+/* Main content area */
+main {
+    min-height: calc(100vh - 60px);
+}
+
+
+/* Card base */
+.card {
+    border-radius: 10px;
+}
+
 .card-hover:hover {
     transform: translateY(-2px);
     transition: transform 0.2s;
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
 }
 
-/* Table improvements */
+
+/* Table headers */
 .table th {
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     text-transform: uppercase;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.04em;
     color: #6c757d;
 }
+
 
 /* Status dot indicators */
 .status-dot {
@@ -63,10 +155,11 @@ body {
     margin-right: 6px;
 }
 
-.status-dot.online { background-color: #198754; }
-.status-dot.offline { background-color: #6c757d; }
-.status-dot.faulted { background-color: #dc3545; }
+.status-dot.online   { background-color: #198754; }
+.status-dot.offline  { background-color: #6c757d; }
+.status-dot.faulted  { background-color: #dc3545; }
 .status-dot.charging { background-color: #0d6efd; }
+
 
 /* Compact form labels */
 .form-label {
@@ -75,12 +168,48 @@ body {
     margin-bottom: 0.25rem;
 }
 
-/* Main content area */
-main {
-    min-height: calc(100vh - 56px);
-}
 
 /* Badge purple for reserved status */
 .bg-purple {
     background-color: #6f42c1 !important;
+}
+
+
+/* Gold accent for primary buttons where brand feel is needed */
+.btn-brand {
+    background-color: var(--brand-gold);
+    border-color: var(--brand-gold);
+    color: #1e1e1e;
+    font-weight: 600;
+}
+
+.btn-brand:hover {
+    background-color: var(--brand-gold-light);
+    border-color: var(--brand-gold-light);
+    color: #1e1e1e;
+}
+
+
+/* Page header divider */
+.page-header {
+    border-bottom: 2px solid var(--brand-gold);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+
+/* Responsive: collapse sidebar on small screens */
+@media (max-width: 767px) {
+    .sidebar {
+        position: relative;
+        top: 0;
+    }
+
+    body {
+        padding-top: 60px;
+    }
+
+    main {
+        min-height: auto;
+    }
 }

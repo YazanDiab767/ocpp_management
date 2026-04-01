@@ -1,85 +1,99 @@
 {% if user.is_authenticated %}
-<nav id="sidebar" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+<nav id="sidebar" class="col-md-3 col-lg-2 d-md-block bg-white sidebar collapse">
     <div class="position-sticky pt-3 sidebar-sticky">
-        <ul class="nav flex-column">
+        <ul class="nav flex-column pb-3">
+
             <li class="nav-item">
-                <a class="nav-link {% if request.resolver_match.url_name == 'dashboard-home' %}active{% endif %}" href="{% url 'dashboard-home' %}">
+                <a class="nav-link {% if request.resolver_match.url_name == 'dashboard-home' %}active{% endif %}"
+                   href="{% url 'dashboard-home' %}">
                     <i class="bi bi-speedometer2 me-2"></i>Dashboard
                 </a>
             </li>
 
-            <li class="nav-item mt-3">
-                <span class="nav-link text-muted small text-uppercase fw-bold">Management</span>
+            <li class="nav-item mt-2">
+                <span class="sidebar-section-label">Management</span>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if 'customer' in request.resolver_match.url_name|default:'' %}active{% endif %}" href="{% url 'customer-list' %}">
+                <a class="nav-link {% if 'customer' in request.resolver_match.url_name|default:'' %}active{% endif %}"
+                   href="{% url 'customer-list' %}">
                     <i class="bi bi-people me-2"></i>Customers
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if 'card' in request.resolver_match.url_name|default:'' %}active{% endif %}" href="{% url 'card-list' %}">
+                <a class="nav-link {% if request.resolver_match.url_name == 'card-list' or request.resolver_match.url_name == 'card-create' or request.resolver_match.url_name == 'card-detail' or request.resolver_match.url_name == 'card-update' %}active{% endif %}"
+                   href="{% url 'card-list' %}">
                     <i class="bi bi-credit-card me-2"></i>RFID Cards
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if request.resolver_match.url_name == 'rfid-tap-log' %}active{% endif %}" href="{% url 'rfid-tap-log' %}">
+                <a class="nav-link {% if request.resolver_match.url_name == 'rfid-tap-log' %}active{% endif %}"
+                   href="{% url 'rfid-tap-log' %}">
                     <i class="bi bi-card-checklist me-2"></i>Tap Log
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if 'charger' in request.resolver_match.url_name|default:'' %}active{% endif %}" href="{% url 'charger-list' %}">
+                <a class="nav-link {% if 'charger' in request.resolver_match.url_name|default:'' %}active{% endif %}"
+                   href="{% url 'charger-list' %}">
                     <i class="bi bi-plug me-2"></i>Chargers
                 </a>
             </li>
 
-            <li class="nav-item mt-3">
-                <span class="nav-link text-muted small text-uppercase fw-bold">Operations</span>
+            <li class="nav-item mt-2">
+                <span class="sidebar-section-label">Operations</span>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if request.resolver_match.url_name == 'session-list' or request.resolver_match.url_name == 'session-detail' %}active{% endif %}" href="{% url 'session-list' %}">
+                <a class="nav-link {% if request.resolver_match.url_name == 'session-list' or request.resolver_match.url_name == 'session-detail' %}active{% endif %}"
+                   href="{% url 'session-list' %}">
                     <i class="bi bi-lightning me-2"></i>Sessions
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if request.resolver_match.url_name == 'session-active' %}active{% endif %}" href="{% url 'session-active' %}">
+                <a class="nav-link {% if request.resolver_match.url_name == 'session-active' %}active{% endif %}"
+                   href="{% url 'session-active' %}">
                     <i class="bi bi-lightning-charge me-2"></i>Active Sessions
                 </a>
             </li>
 
-            <li class="nav-item mt-3">
-                <span class="nav-link text-muted small text-uppercase fw-bold">Reports</span>
+            <li class="nav-item mt-2">
+                <span class="sidebar-section-label">Reports</span>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if request.resolver_match.url_name == 'report-sessions' %}active{% endif %}" href="{% url 'report-sessions' %}">
+                <a class="nav-link {% if request.resolver_match.url_name == 'report-sessions' %}active{% endif %}"
+                   href="{% url 'report-sessions' %}">
                     <i class="bi bi-file-earmark-bar-graph me-2"></i>Session Report
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if request.resolver_match.url_name == 'report-revenue' %}active{% endif %}" href="{% url 'report-revenue' %}">
+                <a class="nav-link {% if request.resolver_match.url_name == 'report-revenue' %}active{% endif %}"
+                   href="{% url 'report-revenue' %}">
                     <i class="bi bi-currency-dollar me-2"></i>Revenue Report
                 </a>
             </li>
 
             {% if user.is_admin %}
-            <li class="nav-item mt-3">
-                <span class="nav-link text-muted small text-uppercase fw-bold">Settings</span>
+            <li class="nav-item mt-2">
+                <span class="sidebar-section-label">Settings</span>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if 'tariff' in request.resolver_match.url_name|default:'' %}active{% endif %}" href="{% url 'tariff-list' %}">
+                <a class="nav-link {% if 'tariff' in request.resolver_match.url_name|default:'' %}active{% endif %}"
+                   href="{% url 'tariff-list' %}">
                     <i class="bi bi-tags me-2"></i>Tariffs
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if request.resolver_match.url_name == 'billing-policy' %}active{% endif %}" href="{% url 'billing-policy' %}">
+                <a class="nav-link {% if request.resolver_match.url_name == 'billing-policy' %}active{% endif %}"
+                   href="{% url 'billing-policy' %}">
                     <i class="bi bi-gear me-2"></i>Billing Policy
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if 'user' in request.resolver_match.url_name|default:'' %}active{% endif %}" href="{% url 'user-list' %}">
+                <a class="nav-link {% if 'user' in request.resolver_match.url_name|default:'' %}active{% endif %}"
+                   href="{% url 'user-list' %}">
                     <i class="bi bi-person-badge me-2"></i>Users
                 </a>
             </li>
             {% endif %}
+
         </ul>
     </div>
 </nav>

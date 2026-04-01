@@ -129,3 +129,28 @@ class OCPPService:
             'Sent ChangeConfiguration to %s: %s=%s',
             charge_point_id, key, value,
         )
+
+    @staticmethod
+    def send_change_availability(charge_point_id, connector_id, availability_type):
+        """
+        Send ChangeAvailability to a specific connector.
+        availability_type must be 'Operative' or 'Inoperative'.
+        Use connector_id=0 to affect the entire charge point.
+        """
+        channel_layer = get_channel_layer()
+        group_name = f'cp_{charge_point_id}'
+        msg_id = str(uuid.uuid4())
+
+        async_to_sync(channel_layer.group_send)(group_name, {
+            'type': 'ocpp.send_call',
+            'unique_id': msg_id,
+            'action': 'ChangeAvailability',
+            'payload': {
+                'connectorId': connector_id,
+                'type': availability_type,
+            },
+        })
+        logger.info(
+            'Sent ChangeAvailability to %s connector %d: %s',
+            charge_point_id, connector_id, availability_type,
+        )

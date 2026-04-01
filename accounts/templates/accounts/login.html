@@ -4,54 +4,207 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - OCPP Management</title>
+    <title>Sign In - Kerish Motor Mall</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            margin: 0;
+            padding: 0;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: #1e1e1e;
         }
-        .login-card {
-            max-width: 420px;
+
+        .login-bg {
+            position: fixed;
+            inset: 0;
+            background-image: url("{% static 'images/background.jpg' %}");
+            background-size: cover;
+            background-position: center top;
+            background-repeat: no-repeat;
+            z-index: 0;
+        }
+
+        .login-bg::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                to bottom,
+                rgba(0, 0, 0, 0.55) 0%,
+                rgba(0, 0, 0, 0.70) 100%
+            );
+        }
+
+        .login-wrapper {
+            position: relative;
+            z-index: 1;
             width: 100%;
-            border-radius: 12px;
+            max-width: 440px;
+            padding: 1rem;
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.97);
+            border-radius: 16px;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+            overflow: hidden;
+        }
+
+        .login-card-header {
+            background-color: #2c2c2c;
+            border-bottom: 3px solid #c8a951;
+            padding: 2rem 2rem 1.5rem;
+            text-align: center;
+        }
+
+        .login-card-header img {
+            height: 56px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .login-card-header .system-title {
+            color: #c8a951;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            margin-top: 0.75rem;
+            margin-bottom: 0;
+        }
+
+        .login-card-body {
+            padding: 2rem;
+        }
+
+        .login-card-body h5 {
+            color: #2c2c2c;
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .login-card-body .subtitle {
+            color: #888;
+            font-size: 0.85rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-control {
+            border-radius: 8px;
+            border: 1.5px solid #e0e0e0;
+            padding: 0.6rem 0.9rem;
+            font-size: 0.95rem;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .form-control:focus {
+            border-color: #c8a951;
+            box-shadow: 0 0 0 3px rgba(200, 169, 81, 0.18);
+            outline: none;
+        }
+
+        .form-label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #444;
+            margin-bottom: 0.3rem;
+        }
+
+        .btn-signin {
+            background-color: #2c2c2c;
+            border: none;
+            color: #fff;
+            border-radius: 8px;
+            padding: 0.65rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            width: 100%;
+            letter-spacing: 0.03em;
+            transition: background-color 0.2s ease;
+        }
+
+        .btn-signin:hover {
+            background-color: #c8a951;
+            color: #1e1e1e;
+        }
+
+        .login-footer {
+            text-align: center;
+            padding: 0.75rem 1rem 1rem;
+            color: #aaa;
+            font-size: 0.75rem;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        @media (max-width: 480px) {
+            .login-card-body {
+                padding: 1.5rem;
+            }
+            .login-card-header {
+                padding: 1.5rem 1.5rem 1.25rem;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="login-card card shadow-lg border-0">
-        <div class="card-body p-5">
-            <div class="text-center mb-4">
-                <i class="bi bi-ev-station fs-1 text-primary"></i>
-                <h4 class="mt-2 fw-bold">OCPP Management</h4>
-                <p class="text-muted">Sign in to your account</p>
+
+    <div class="login-bg"></div>
+
+    <div class="login-wrapper">
+        <div class="login-card">
+
+            <div class="login-card-header">
+                <img src="{% static 'images/logo.jpg' %}" alt="Kerish Motor Mall">
+                <p class="system-title">Charger Management System</p>
             </div>
 
-            {% if form.errors %}
-            <div class="alert alert-danger py-2">
-                Invalid phone number or password.
-            </div>
-            {% endif %}
+            <div class="login-card-body">
+                <h5>Welcome back</h5>
+                <p class="subtitle">Sign in to manage your charging stations</p>
 
-            <form method="post">
-                {% csrf_token %}
-                <div class="mb-3">
-                    <label for="id_username" class="form-label">Phone Number</label>
-                    {{ form.username }}
+                {% if form.errors %}
+                <div class="alert alert-danger py-2 mb-3" style="border-radius: 8px; font-size: 0.875rem;">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    Invalid phone number or password.
                 </div>
-                <div class="mb-4">
-                    <label for="id_password" class="form-label">Password</label>
-                    {{ form.password }}
-                </div>
-                <button type="submit" class="btn btn-primary w-100 py-2">
-                    <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
-                </button>
-            </form>
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="id_username" class="form-label">
+                            <i class="bi bi-phone me-1"></i>Phone Number
+                        </label>
+                        {{ form.username }}
+                    </div>
+                    <div class="mb-4">
+                        <label for="id_password" class="form-label">
+                            <i class="bi bi-lock me-1"></i>Password
+                        </label>
+                        {{ form.password }}
+                    </div>
+                    <button type="submit" class="btn-signin">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+                    </button>
+                </form>
+            </div>
+
+            <div class="login-footer">
+                &copy; {% now "Y" %} Kerish Motor Mall. All rights reserved.
+            </div>
+
         </div>
     </div>
+
 </body>
 </html>

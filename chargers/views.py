@@ -133,6 +133,24 @@ def charger_command(request, pk):
             else:
                 OCPPService.send_remote_stop(cp.charge_point_id, int(transaction_id))
                 messages.success(request, f'RemoteStopTransaction sent (txn={transaction_id}).')
+        elif command == 'change_config':
+            key = request.POST.get('config_key', '').strip()
+            value = request.POST.get('config_value', '').strip()
+            if not key or not value:
+                messages.error(request, 'Both key and value are required.')
+            else:
+                OCPPService.send_change_configuration(cp.charge_point_id, key, value)
+                messages.success(request, f'ChangeConfiguration sent: {key} = {value}. Check OCPP Log for the response.')
+        elif command == 'change_availability':
+            connector_id = int(request.POST.get('connector_id', 0))
+            availability_type = request.POST.get('availability_type', 'Operative')
+            if availability_type not in ('Operative', 'Inoperative'):
+                messages.error(request, 'Invalid availability type.')
+            else:
+                OCPPService.send_change_availability(cp.charge_point_id, connector_id, availability_type)
+                label = 'Enabled' if availability_type == 'Operative' else 'Disabled'
+                target = f'Connector {connector_id}' if connector_id > 0 else 'All connectors'
+                messages.success(request, f'ChangeAvailability sent: {target} → {label}.')
         else:
             messages.error(request, f'Unknown command: {command}')
     except Exception as e:
