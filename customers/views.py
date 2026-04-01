@@ -1,14 +1,15 @@
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
+
+from accounts.decorators import page_permission_required
 
 from customers.forms import CustomerForm, WalletTopupForm
 from customers.models import Customer, WalletTransaction
 from customers.services import CustomerService, WalletService
 
 
-@login_required
+@page_permission_required('customers')
 def customer_list(request):
     query = request.GET.get('q', '')
     qs = Customer.objects.select_related('wallet').all()
@@ -27,7 +28,7 @@ def customer_list(request):
     })
 
 
-@login_required
+@page_permission_required('customers')
 def customer_create(request):
     if request.method == 'POST':
         form = CustomerForm(request.POST)
@@ -46,7 +47,7 @@ def customer_create(request):
     })
 
 
-@login_required
+@page_permission_required('customers')
 def customer_detail(request, pk):
     customer = get_object_or_404(
         Customer.objects.select_related('wallet'),
@@ -63,7 +64,7 @@ def customer_detail(request, pk):
     })
 
 
-@login_required
+@page_permission_required('customers')
 def customer_update(request, pk):
     customer = get_object_or_404(Customer, pk=pk)
     if request.method == 'POST':
@@ -81,7 +82,7 @@ def customer_update(request, pk):
     })
 
 
-@login_required
+@page_permission_required('customers')
 def wallet_topup(request, pk):
     customer = get_object_or_404(
         Customer.objects.select_related('wallet'),
@@ -110,7 +111,7 @@ def wallet_topup(request, pk):
     })
 
 
-@login_required
+@page_permission_required('customers')
 def wallet_ledger(request, pk):
     customer = get_object_or_404(
         Customer.objects.select_related('wallet'),

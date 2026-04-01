@@ -2,6 +2,8 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import AuthenticationForm
 
+from accounts.models import PagePermission, PAGE_REGISTRY
+
 User = get_user_model()
 
 
@@ -55,6 +57,9 @@ class UserCreateForm(forms.ModelForm):
             user.is_staff = True
         if commit:
             user.save()
+            # Admins get all permissions automatically
+            if user.role == User.Role.ADMIN:
+                user.page_permissions.set(PagePermission.objects.all())
         return user
 
 
@@ -77,4 +82,48 @@ class UserUpdateForm(forms.ModelForm):
             user.is_staff = False
         if commit:
             user.save()
+            # When promoted to admin, grant all permissions
+            if user.role == User.Role.ADMIN:
+                user.page_permissions.set(PagePermission.objects.all())
         return user
+
+
+class UserPermissionsForm(forms.Form):
+    """Checkbox form for assigning page permissions to a user.
+    Permissions are grouped by section for a clean layout."""
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+
+        # Build one checkbox per page, grouped by section
+        all_perms = PagePermission.objects.all()
+        user_perm_keys = set()
+        if user:
+            user_perm_keys = set(user.page_permissions.values_list('page_key', flat=True))
+
+        for perm in all_perms:
+            self.fields[perm.page_key] = forms.BooleanField(
+                label=perm.display_name,
+                required=False,
+                initial=perm.page_key in user_perm_keys,
+                widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            )
+
+    def get_sections(self):
+        """Return fields grouped by section for template rendering."""
+        all_perms = PagePermission.objects.all()
+        sections = {}
+        for perm in all_perms:
+            if perm.section not in sections:
+                sections[perm.section] = []
+            field = self[perm.page_key]
+            sections[perm.section].append(field)
+        return sections
+
+    def save(self):
+        if not self.user:
+            return
+        selected_keys = [key for key, val in self.cleaned_data.items() if val]
+        perms = PagePermission.objects.filter(page_key__in=selected_keys)
+        self.user.page_permissions.set(perms)

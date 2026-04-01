@@ -1,12 +1,12 @@
 import logging
 
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
+from accounts.decorators import page_permission_required
 from chargers.models import ChargePoint
 from sessions.models import ChargingSession, MeterValue
 from sessions.services import SessionService
@@ -14,7 +14,7 @@ from sessions.services import SessionService
 logger = logging.getLogger('ocpp')
 
 
-@login_required
+@page_permission_required('sessions')
 def session_list(request):
     qs = ChargingSession.objects.select_related(
         'charge_point', 'connector', 'customer',
@@ -48,7 +48,7 @@ def session_list(request):
     })
 
 
-@login_required
+@page_permission_required('sessions')
 def session_detail(request, transaction_id):
     session = get_object_or_404(
         ChargingSession.objects.select_related(
@@ -64,7 +64,7 @@ def session_detail(request, transaction_id):
     })
 
 
-@login_required
+@page_permission_required('active_sessions')
 def active_sessions(request):
     sessions = list(ChargingSession.objects.filter(
         status=ChargingSession.Status.ACTIVE,
@@ -85,7 +85,7 @@ def active_sessions(request):
     })
 
 
-@login_required
+@page_permission_required('sessions')
 @require_POST
 def session_remote_stop(request, transaction_id):
     """Send RemoteStopTransaction to the charger via OCPP."""
@@ -95,7 +95,6 @@ def session_remote_stop(request, transaction_id):
         messages.warning(request, f'Session #{transaction_id} is already {session.get_status_display()}.')
         return redirect('session-detail', transaction_id=transaction_id)
 
-    # Check charger is online
     try:
         cp = ChargePoint.objects.get(charge_point_id=session.charge_point_id_str)
         if cp.status != ChargePoint.Status.ONLINE:
@@ -119,7 +118,7 @@ def session_remote_stop(request, transaction_id):
     return redirect('session-detail', transaction_id=transaction_id)
 
 
-@login_required
+@page_permission_required('sessions')
 @require_POST
 def session_force_close(request, transaction_id):
     """Force-close a stuck session on the server side. Works even if charger is offline."""
@@ -145,7 +144,7 @@ def session_force_close(request, transaction_id):
     return redirect('session-detail', transaction_id=transaction_id)
 
 
-@login_required
+@page_permission_required('sessions')
 @require_POST
 def session_reset_charger(request, transaction_id):
     """Send a Soft or Hard Reset to the charger associated with this session."""

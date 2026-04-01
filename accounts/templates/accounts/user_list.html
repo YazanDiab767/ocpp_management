@@ -18,6 +18,7 @@
                     <th>Full Name</th>
                     <th>Phone Number</th>
                     <th>Role</th>
+                    <th>Permissions</th>
                     <th>Status</th>
                     <th>Date Joined</th>
                     <th>Actions</th>
@@ -34,6 +35,15 @@
                     <td>{{ u.phone_number }}</td>
                     <td><span class="badge bg-{% if u.role == 'admin' %}primary{% else %}secondary{% endif %}">{{ u.get_role_display }}</span></td>
                     <td>
+                        {% if u.role == 'admin' %}
+                        <span class="text-muted small">All pages</span>
+                        {% else %}
+                        <a href="{% url 'user-permissions' u.pk %}" class="text-decoration-none">
+                            {{ u.page_permissions.count }} / {{ total_pages }}
+                        </a>
+                        {% endif %}
+                    </td>
+                    <td>
                         {% if u.is_active %}
                         <span class="badge bg-success">Active</span>
                         {% else %}
@@ -42,14 +52,19 @@
                     </td>
                     <td>{{ u.date_joined|date:"M d, Y" }}</td>
                     <td>
-                        <a href="{% url 'user-update' u.pk %}" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-pencil"></i>
-                        </a>
+                        <div class="d-flex gap-1">
+                            <a href="{% url 'user-permissions' u.pk %}" class="btn btn-sm btn-outline-warning" title="Permissions">
+                                <i class="bi bi-shield-lock"></i>
+                            </a>
+                            <a href="{% url 'user-update' u.pk %}" class="btn btn-sm btn-outline-primary" title="Edit">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </div>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" class="text-center text-muted py-4">No users found.</td>
+                    <td colspan="7" class="text-center text-muted py-4">No users found.</td>
                 </tr>
                 {% endfor %}
             </tbody>

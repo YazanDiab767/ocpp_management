@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 
 from accounts.decorators import admin_required
-from accounts.forms import PhoneLoginForm, UserCreateForm, UserUpdateForm
+from accounts.forms import PhoneLoginForm, UserCreateForm, UserUpdateForm, UserPermissionsForm
 
 User = get_user_model()
 
@@ -31,7 +31,11 @@ def logout_view(request):
 @admin_required
 def user_list(request):
     users = User.objects.all().order_by('-date_joined')
-    return render(request, 'accounts/user_list.html', {'users': users})
+    from accounts.models import PAGE_REGISTRY
+    return render(request, 'accounts/user_list.html', {
+        'users': users,
+        'total_pages': len(PAGE_REGISTRY),
+    })
 
 
 @admin_required
@@ -53,7 +57,19 @@ def user_create(request):
 @admin_required
 def user_detail(request, pk):
     user = get_object_or_404(User, pk=pk)
-    return render(request, 'accounts/user_detail.html', {'user_obj': user})
+    allowed_pages = user.get_allowed_pages()
+    from accounts.models import PAGE_REGISTRY
+    permissions_display = []
+    for key, (name, section) in PAGE_REGISTRY.items():
+        permissions_display.append({
+            'name': name,
+            'section': section,
+            'allowed': key in allowed_pages,
+        })
+    return render(request, 'accounts/user_detail.html', {
+        'user_obj': user,
+        'permissions_display': permissions_display,
+    })
 
 
 @admin_required
@@ -71,6 +87,24 @@ def user_update(request, pk):
         'form': form,
         'title': 'Edit User',
         'user_obj': user,
+    })
+
+
+@admin_required
+def user_permissions(request, pk):
+    user = get_object_or_404(User, pk=pk)
+    if request.method == 'POST':
+        form = UserPermissionsForm(request.POST, user=user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Permissions updated for {user.full_name}.')
+            return redirect('user-detail', pk=user.pk)
+    else:
+        form = UserPermissionsForm(user=user)
+    return render(request, 'accounts/user_permissions.html', {
+        'form': form,
+        'user_obj': user,
+        'sections': form.get_sections(),
     })
 
 

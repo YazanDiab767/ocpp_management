@@ -3,11 +3,14 @@ from django.core.paginator import Paginator
 from django.shortcuts import render
 from django.utils.dateparse import parse_date
 
+from accounts.decorators import page_permission_required
 from dashboard.services import ReportService
 
 
 @login_required
 def dashboard_home(request):
+    # Dashboard is always accessible to logged-in users, but the template
+    # filters widgets based on allowed_pages from the context processor
     stats = ReportService.get_dashboard_stats()
     recent_sessions = ReportService.get_recent_sessions(limit=10)
     charger_summary = ReportService.get_charger_status_summary()
@@ -19,7 +22,7 @@ def dashboard_home(request):
     })
 
 
-@login_required
+@page_permission_required('session_report')
 def report_sessions(request):
     date_from = request.GET.get('date_from', '')
     date_to = request.GET.get('date_to', '')
@@ -46,7 +49,7 @@ def report_sessions(request):
     })
 
 
-@login_required
+@page_permission_required('revenue_report')
 def report_revenue(request):
     date_from = request.GET.get('date_from', '')
     date_to = request.GET.get('date_to', '')

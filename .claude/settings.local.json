@@ -12,7 +12,17 @@
       "Bash(source venv/Scripts/activate)",
       "Bash(python manage.py shell -c \":*)",
       "Bash(python manage.py makemigrations rfid --name=\"add_rfid_tap_log\")",
-      "Bash(python manage.py check --deploy)"
+      "Bash(python manage.py check --deploy)",
+      "Bash(mkdir -p \"d:/Python/OCPP Management/ocpp_management/static/images\")",
+      "Bash(cp \"d:/Python/OCPP Management/Images/logo.jpg\" \"d:/Python/OCPP Management/ocpp_management/static/images/logo.jpg\")",
+      "Bash(cp \"d:/Python/OCPP Management/Images/background.jpg\" \"d:/Python/OCPP Management/ocpp_management/static/images/background.jpg\")",
+      "Bash(python manage.py makemigrations chargers --name add_boot_enforce_config)",
+      "Bash(python manage.py makemigrations accounts --name add_page_permissions)",
+      "Bash(python manage.py makemigrations accounts --empty --name seed_page_permissions)",
+      "Bash(python manage.py makemigrations accounts --empty --name grant_existing_users_all_permissions)",
+      "Bash(python -c ':*)",
+      "Bash(python manage.py shell -c ':*)",
+      "Bash(timeout 5 python manage.py runserver 0.0.0.0:9999)"
     ]
   }
 }

@@ -1,14 +1,14 @@
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 
+from accounts.decorators import page_permission_required
 from rfid.forms import RFIDCardCreateForm, RFIDCardUpdateForm, RFIDCardAssignForm
 from rfid.models import RFIDCard, RFIDTapLog
 from rfid.services import RFIDService
 
 
-@login_required
+@page_permission_required('tap_log')
 def tap_log(request):
     qs = RFIDTapLog.objects.select_related('rfid_card').all()
     result_filter = request.GET.get('result')
@@ -32,7 +32,7 @@ def tap_log(request):
     })
 
 
-@login_required
+@page_permission_required('rfid_cards')
 def card_list(request):
     qs = RFIDCard.objects.select_related('customer').all()
     status_filter = request.GET.get('status')
@@ -57,7 +57,7 @@ def card_list(request):
     })
 
 
-@login_required
+@page_permission_required('rfid_cards')
 def card_create(request):
     initial = {}
     customer_id = request.GET.get('customer')
@@ -77,7 +77,7 @@ def card_create(request):
     })
 
 
-@login_required
+@page_permission_required('rfid_cards')
 def card_detail(request, pk):
     card = get_object_or_404(
         RFIDCard.objects.select_related('customer', 'customer__wallet', 'issued_by'),
@@ -86,7 +86,7 @@ def card_detail(request, pk):
     return render(request, 'rfid/card_detail.html', {'card': card})
 
 
-@login_required
+@page_permission_required('rfid_cards')
 def card_update(request, pk):
     card = get_object_or_404(RFIDCard, pk=pk)
     if request.method == 'POST':
@@ -104,7 +104,7 @@ def card_update(request, pk):
     })
 
 
-@login_required
+@page_permission_required('rfid_cards')
 def card_assign(request, pk):
     card = get_object_or_404(RFIDCard, pk=pk)
     if request.method == 'POST':
@@ -125,7 +125,7 @@ def card_assign(request, pk):
     })
 
 
-@login_required
+@page_permission_required('rfid_cards')
 def card_block(request, pk):
     card = get_object_or_404(RFIDCard, pk=pk)
     if request.method == 'POST':
@@ -134,7 +134,7 @@ def card_block(request, pk):
     return redirect('card-detail', pk=card.pk)
 
 
-@login_required
+@page_permission_required('rfid_cards')
 def card_unassign(request, pk):
     card = get_object_or_404(RFIDCard, pk=pk)
     if request.method == 'POST':

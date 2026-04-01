@@ -3,89 +3,130 @@
     <div class="position-sticky pt-3 sidebar-sticky">
         <ul class="nav flex-column pb-3">
 
+            {% if 'dashboard' in allowed_pages %}
             <li class="nav-item">
                 <a class="nav-link {% if request.resolver_match.url_name == 'dashboard-home' %}active{% endif %}"
                    href="{% url 'dashboard-home' %}">
                     <i class="bi bi-speedometer2 me-2"></i>Dashboard
                 </a>
             </li>
+            {% endif %}
 
+            {% if 'customers' in allowed_pages or 'rfid_cards' in allowed_pages or 'tap_log' in allowed_pages or 'chargers' in allowed_pages %}
             <li class="nav-item mt-2">
                 <span class="sidebar-section-label">Management</span>
             </li>
+            {% endif %}
+
+            {% if 'customers' in allowed_pages %}
             <li class="nav-item">
                 <a class="nav-link {% if 'customer' in request.resolver_match.url_name|default:'' %}active{% endif %}"
                    href="{% url 'customer-list' %}">
                     <i class="bi bi-people me-2"></i>Customers
                 </a>
             </li>
+            {% endif %}
+
+            {% if 'rfid_cards' in allowed_pages %}
             <li class="nav-item">
                 <a class="nav-link {% if request.resolver_match.url_name == 'card-list' or request.resolver_match.url_name == 'card-create' or request.resolver_match.url_name == 'card-detail' or request.resolver_match.url_name == 'card-update' %}active{% endif %}"
                    href="{% url 'card-list' %}">
                     <i class="bi bi-credit-card me-2"></i>RFID Cards
                 </a>
             </li>
+            {% endif %}
+
+            {% if 'tap_log' in allowed_pages %}
             <li class="nav-item">
                 <a class="nav-link {% if request.resolver_match.url_name == 'rfid-tap-log' %}active{% endif %}"
                    href="{% url 'rfid-tap-log' %}">
                     <i class="bi bi-card-checklist me-2"></i>Tap Log
                 </a>
             </li>
+            {% endif %}
+
+            {% if 'chargers' in allowed_pages %}
             <li class="nav-item">
                 <a class="nav-link {% if 'charger' in request.resolver_match.url_name|default:'' %}active{% endif %}"
                    href="{% url 'charger-list' %}">
                     <i class="bi bi-plug me-2"></i>Chargers
                 </a>
             </li>
+            {% endif %}
 
+            {% if 'sessions' in allowed_pages or 'active_sessions' in allowed_pages %}
             <li class="nav-item mt-2">
                 <span class="sidebar-section-label">Operations</span>
             </li>
+            {% endif %}
+
+            {% if 'sessions' in allowed_pages %}
             <li class="nav-item">
                 <a class="nav-link {% if request.resolver_match.url_name == 'session-list' or request.resolver_match.url_name == 'session-detail' %}active{% endif %}"
                    href="{% url 'session-list' %}">
                     <i class="bi bi-lightning me-2"></i>Sessions
                 </a>
             </li>
+            {% endif %}
+
+            {% if 'active_sessions' in allowed_pages %}
             <li class="nav-item">
                 <a class="nav-link {% if request.resolver_match.url_name == 'session-active' %}active{% endif %}"
                    href="{% url 'session-active' %}">
                     <i class="bi bi-lightning-charge me-2"></i>Active Sessions
                 </a>
             </li>
+            {% endif %}
 
+            {% if 'session_report' in allowed_pages or 'revenue_report' in allowed_pages %}
             <li class="nav-item mt-2">
                 <span class="sidebar-section-label">Reports</span>
             </li>
+            {% endif %}
+
+            {% if 'session_report' in allowed_pages %}
             <li class="nav-item">
                 <a class="nav-link {% if request.resolver_match.url_name == 'report-sessions' %}active{% endif %}"
                    href="{% url 'report-sessions' %}">
                     <i class="bi bi-file-earmark-bar-graph me-2"></i>Session Report
                 </a>
             </li>
+            {% endif %}
+
+            {% if 'revenue_report' in allowed_pages %}
             <li class="nav-item">
                 <a class="nav-link {% if request.resolver_match.url_name == 'report-revenue' %}active{% endif %}"
                    href="{% url 'report-revenue' %}">
                     <i class="bi bi-currency-dollar me-2"></i>Revenue Report
                 </a>
             </li>
+            {% endif %}
 
-            {% if user.is_admin %}
+            {% if 'tariffs' in allowed_pages or 'billing_policy' in allowed_pages or 'users' in allowed_pages %}
             <li class="nav-item mt-2">
                 <span class="sidebar-section-label">Settings</span>
             </li>
+            {% endif %}
+
+            {% if 'tariffs' in allowed_pages %}
             <li class="nav-item">
                 <a class="nav-link {% if 'tariff' in request.resolver_match.url_name|default:'' %}active{% endif %}"
                    href="{% url 'tariff-list' %}">
                     <i class="bi bi-tags me-2"></i>Tariffs
                 </a>
             </li>
+            {% endif %}
+
+            {% if 'billing_policy' in allowed_pages %}
             <li class="nav-item">
                 <a class="nav-link {% if request.resolver_match.url_name == 'billing-policy' %}active{% endif %}"
                    href="{% url 'billing-policy' %}">
                     <i class="bi bi-gear me-2"></i>Billing Policy
                 </a>
             </li>
+            {% endif %}
+
+            {% if 'users' in allowed_pages %}
             <li class="nav-item">
                 <a class="nav-link {% if 'user' in request.resolver_match.url_name|default:'' %}active{% endif %}"
                    href="{% url 'user-list' %}">

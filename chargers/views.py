@@ -1,7 +1,8 @@
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
+
+from accounts.decorators import page_permission_required
 from django.views.decorators.http import require_POST
 
 from chargers.forms import ChargePointForm
@@ -12,7 +13,7 @@ from rfid.models import RFIDCard
 from sessions.models import ChargingSession
 
 
-@login_required
+@page_permission_required('chargers')
 def charger_list(request):
     qs = ChargePoint.objects.prefetch_related('connectors').all().order_by('-created_at')
     status_filter = request.GET.get('status')
@@ -27,7 +28,7 @@ def charger_list(request):
     })
 
 
-@login_required
+@page_permission_required('chargers')
 def charger_create(request):
     if request.method == 'POST':
         form = ChargePointForm(request.POST)
@@ -43,7 +44,7 @@ def charger_create(request):
     })
 
 
-@login_required
+@page_permission_required('chargers')
 def charger_detail(request, pk):
     cp = get_object_or_404(ChargePoint.objects.prefetch_related('connectors'), pk=pk)
     recent_messages = OCPPMessage.objects.filter(
@@ -68,7 +69,7 @@ def charger_detail(request, pk):
     })
 
 
-@login_required
+@page_permission_required('chargers')
 def charger_update(request, pk):
     cp = get_object_or_404(ChargePoint, pk=pk)
     if request.method == 'POST':
@@ -86,7 +87,7 @@ def charger_update(request, pk):
     })
 
 
-@login_required
+@page_permission_required('chargers')
 @require_POST
 def charger_command(request, pk):
     cp = get_object_or_404(ChargePoint, pk=pk)
@@ -159,7 +160,7 @@ def charger_command(request, pk):
     return redirect('charger-detail', pk=cp.pk)
 
 
-@login_required
+@page_permission_required('chargers')
 def charger_messages(request, pk):
     cp = get_object_or_404(ChargePoint, pk=pk)
     msgs = OCPPMessage.objects.filter(

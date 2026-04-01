@@ -1,19 +1,19 @@
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 
-from accounts.decorators import admin_required
+from accounts.decorators import page_permission_required
 from billing.forms import BillingPolicyForm, TariffForm
 from billing.models import BillingPolicy, Tariff
 from billing.services import TariffService
 
 
-@admin_required
+@page_permission_required('tariffs')
 def tariff_list(request):
     tariffs = Tariff.objects.all()
     return render(request, 'billing/tariff_list.html', {'tariffs': tariffs})
 
 
-@admin_required
+@page_permission_required('tariffs')
 def tariff_create(request):
     if request.method == 'POST':
         form = TariffForm(request.POST)
@@ -30,7 +30,7 @@ def tariff_create(request):
     return render(request, 'billing/tariff_form.html', {'form': form, 'title': 'Create Tariff'})
 
 
-@admin_required
+@page_permission_required('tariffs')
 def tariff_update(request, pk):
     tariff = get_object_or_404(Tariff, pk=pk)
     if request.method == 'POST':
@@ -49,7 +49,7 @@ def tariff_update(request, pk):
     return render(request, 'billing/tariff_form.html', {'form': form, 'title': 'Edit Tariff'})
 
 
-@admin_required
+@page_permission_required('tariffs')
 def tariff_activate(request, pk):
     if request.method == 'POST':
         TariffService.activate_tariff(pk)
@@ -57,7 +57,7 @@ def tariff_activate(request, pk):
     return redirect('tariff-list')
 
 
-@admin_required
+@page_permission_required('billing_policy')
 def billing_policy(request):
     policy = BillingPolicy.load()
     if request.method == 'POST':
