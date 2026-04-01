@@ -22,7 +22,11 @@
       "Bash(python manage.py makemigrations accounts --empty --name grant_existing_users_all_permissions)",
       "Bash(python -c ':*)",
       "Bash(python manage.py shell -c ':*)",
-      "Bash(timeout 5 python manage.py runserver 0.0.0.0:9999)"
+      "Bash(timeout 5 python manage.py runserver 0.0.0.0:9999)",
+      "Bash(python manage.py makemigrations customers --name add_vehicle_fields)",
+      "Bash(python manage.py migrate --run-syncdb --check)",
+      "Bash(echo \"Exit: $?\")",
+      "Bash(python manage.py showmigrations customers accounts)"
     ]
   }
 }

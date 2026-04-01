@@ -6,6 +6,16 @@ from django.db import models
 
 class Customer(models.Model):
 
+    class VehicleType(models.TextChoices):
+        SEDAN = 'sedan', 'Sedan'
+        SUV = 'suv', 'SUV'
+        HATCHBACK = 'hatchback', 'Hatchback'
+        TRUCK = 'truck', 'Truck'
+        VAN = 'van', 'Van'
+        MOTORCYCLE = 'motorcycle', 'Motorcycle'
+        BUS = 'bus', 'Bus'
+        OTHER = 'other', 'Other'
+
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     phone_number = models.CharField(max_length=20, unique=True, db_index=True)
@@ -15,6 +25,11 @@ class Customer(models.Model):
         help_text='National ID or passport number',
     )
     vehicle_plate = models.CharField(max_length=20, blank=True, default='')
+    vehicle_type = models.CharField(
+        max_length=20, choices=VehicleType.choices, blank=True, default='',
+    )
+    vehicle_model = models.CharField(max_length=100, blank=True, default='')
+    vehicle_year = models.PositiveIntegerField(null=True, blank=True)
     notes = models.TextField(blank=True, default='')
     is_active = models.BooleanField(default=True)
     created_by = models.ForeignKey(

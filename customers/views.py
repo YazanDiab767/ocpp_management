@@ -6,12 +6,15 @@ from accounts.decorators import page_permission_required
 
 from customers.forms import CustomerForm, WalletTopupForm
 from customers.models import Customer, WalletTransaction
+
+VEHICLE_TYPE_CHOICES = Customer.VehicleType.choices
 from customers.services import CustomerService, WalletService
 
 
 @page_permission_required('customers')
 def customer_list(request):
     query = request.GET.get('q', '')
+    vehicle_type = request.GET.get('vehicle_type', '')
     qs = Customer.objects.select_related('wallet').all()
     if query:
         from django.db.models import Q
@@ -20,11 +23,15 @@ def customer_list(request):
             | Q(last_name__icontains=query)
             | Q(phone_number__icontains=query)
         )
+    if vehicle_type:
+        qs = qs.filter(vehicle_type=vehicle_type)
     paginator = Paginator(qs, 25)
     page_obj = paginator.get_page(request.GET.get('page'))
     return render(request, 'customers/customer_list.html', {
         'page_obj': page_obj,
         'query': query,
+        'vehicle_type': vehicle_type,
+        'vehicle_type_choices': VEHICLE_TYPE_CHOICES,
     })
 
 

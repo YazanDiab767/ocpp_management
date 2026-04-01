@@ -1,10 +1,15 @@
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.db.models import Sum, Count, Q
 from django.shortcuts import render
 from django.utils.dateparse import parse_date
 
 from accounts.decorators import page_permission_required
+from customers.models import WalletTransaction
 from dashboard.services import ReportService
+
+User = get_user_model()
 
 
 @login_required
@@ -66,4 +71,53 @@ def report_revenue(request):
         'report': report,
         'date_from': date_from,
         'date_to': date_to,
+    })
+
+
+@page_permission_required('topup_report')
+def report_topups(request):
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    customer_q = request.GET.get('customer', '')
+    created_by = request.GET.get('created_by', '')
+
+    qs = WalletTransaction.objects.filter(
+        transaction_type=WalletTransaction.TransactionType.TOPUP,
+    ).select_related('wallet__customer', 'created_by').order_by('-created_at')
+
+    if date_from:
+        parsed = parse_date(date_from)
+        if parsed:
+            qs = qs.filter(created_at__date__gte=parsed)
+    if date_to:
+        parsed = parse_date(date_to)
+        if parsed:
+            qs = qs.filter(created_at__date__lte=parsed)
+    if customer_q:
+        qs = qs.filter(
+            Q(wallet__customer__first_name__icontains=customer_q)
+            | Q(wallet__customer__last_name__icontains=customer_q)
+            | Q(wallet__customer__phone_number__icontains=customer_q)
+        )
+    if created_by:
+        qs = qs.filter(created_by_id=created_by)
+
+    totals = qs.aggregate(
+        total_amount=Sum('amount'),
+        total_count=Count('id'),
+    )
+
+    staff_users = User.objects.filter(is_active=True).order_by('full_name')
+
+    paginator = Paginator(qs, 25)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    return render(request, 'dashboard/report_topups.html', {
+        'page_obj': page_obj,
+        'totals': totals,
+        'date_from': date_from,
+        'date_to': date_to,
+        'customer_q': customer_q,
+        'created_by': created_by,
+        'staff_users': staff_users,
     })

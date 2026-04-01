@@ -8,7 +8,9 @@ class CustomerForm(forms.ModelForm):
         model = Customer
         fields = [
             'first_name', 'last_name', 'phone_number',
-            'email', 'id_number', 'vehicle_plate', 'notes', 'is_active',
+            'email', 'id_number', 'vehicle_plate',
+            'vehicle_type', 'vehicle_model', 'vehicle_year',
+            'notes', 'is_active',
         ]
         widgets = {
             'first_name': forms.TextInput(attrs={'class': 'form-control'}),
@@ -17,6 +19,9 @@ class CustomerForm(forms.ModelForm):
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
             'id_number': forms.TextInput(attrs={'class': 'form-control'}),
             'vehicle_plate': forms.TextInput(attrs={'class': 'form-control'}),
+            'vehicle_type': forms.Select(attrs={'class': 'form-select'}),
+            'vehicle_model': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Tesla Model 3'}),
+            'vehicle_year': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 2024'}),
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }

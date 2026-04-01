@@ -18,8 +18,16 @@
                        placeholder="Search by name or phone...">
             </div>
             <div class="col-auto">
+                <select name="vehicle_type" class="form-select form-select-sm" style="min-width: 150px;">
+                    <option value="">All Vehicle Types</option>
+                    {% for value, label in vehicle_type_choices %}
+                    <option value="{{ value }}" {% if vehicle_type == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
                 <button type="submit" class="btn btn-sm btn-outline-primary">Search</button>
-                {% if query %}<a href="{% url 'customer-list' %}" class="btn btn-sm btn-outline-secondary">Clear</a>{% endif %}
+                {% if query or vehicle_type %}<a href="{% url 'customer-list' %}" class="btn btn-sm btn-outline-secondary">Clear</a>{% endif %}
             </div>
         </form>
     </div>
@@ -32,6 +40,7 @@
                 <tr>
                     <th>Name</th>
                     <th>Phone</th>
+                    <th>Vehicle</th>
                     <th>Balance</th>
                     <th>Status</th>
                     <th>Created</th>
@@ -47,6 +56,11 @@
                         </a>
                     </td>
                     <td>{{ customer.phone_number }}</td>
+                    <td class="small">
+                        {% if customer.vehicle_type %}{{ customer.get_vehicle_type_display }}{% endif %}
+                        {% if customer.vehicle_model %}<br>{{ customer.vehicle_model }}{% endif %}
+                        {% if customer.vehicle_year %} ({{ customer.vehicle_year }}){% endif %}
+                    </td>
                     <td class="fw-bold {% if customer.wallet.balance > 0 %}text-success{% elif customer.wallet.balance == 0 %}text-muted{% else %}text-danger{% endif %}">
                         {{ customer.wallet.balance }} ILS
                     </td>
@@ -69,7 +83,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" class="text-center text-muted py-4">No customers found.</td>
+                    <td colspan="7" class="text-center text-muted py-4">No customers found.</td>
                 </tr>
                 {% endfor %}
             </tbody>

@@ -78,7 +78,7 @@
             </li>
             {% endif %}
 
-            {% if 'session_report' in allowed_pages or 'revenue_report' in allowed_pages %}
+            {% if 'session_report' in allowed_pages or 'revenue_report' in allowed_pages or 'topup_report' in allowed_pages %}
             <li class="nav-item mt-2">
                 <span class="sidebar-section-label">Reports</span>
             </li>
@@ -98,6 +98,15 @@
                 <a class="nav-link {% if request.resolver_match.url_name == 'report-revenue' %}active{% endif %}"
                    href="{% url 'report-revenue' %}">
                     <i class="bi bi-currency-dollar me-2"></i>Revenue Report
+                </a>
+            </li>
+            {% endif %}
+
+            {% if 'topup_report' in allowed_pages %}
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'report-topups' %}active{% endif %}"
+                   href="{% url 'report-topups' %}">
+                    <i class="bi bi-wallet2 me-2"></i>Top-Up Report
                 </a>
             </li>
             {% endif %}

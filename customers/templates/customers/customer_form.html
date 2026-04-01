@@ -45,6 +45,20 @@
                     {{ form.vehicle_plate }}
                 </div>
             </div>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="{{ form.vehicle_type.id_for_label }}" class="form-label">Vehicle Type</label>
+                    {{ form.vehicle_type }}
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="{{ form.vehicle_model.id_for_label }}" class="form-label">Vehicle Model</label>
+                    {{ form.vehicle_model }}
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="{{ form.vehicle_year.id_for_label }}" class="form-label">Year of Production</label>
+                    {{ form.vehicle_year }}
+                </div>
+            </div>
             <div class="mb-3">
                 <label for="{{ form.notes.id_for_label }}" class="form-label">Notes</label>
                 {{ form.notes }}

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Top-Up Report - OCPP Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">Top-Up Report</h4>
+</div>
+
+<!-- Filters -->
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-2">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-auto">
+                <label class="form-label small mb-0">From</label>
+                <input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}">
+            </div>
+            <div class="col-auto">
+                <label class="form-label small mb-0">To</label>
+                <input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}">
+            </div>
+            <div class="col-auto">
+                <label class="form-label small mb-0">Customer</label>
+                <input type="text" name="customer" class="form-control form-control-sm"
+                       placeholder="Name or phone..." value="{{ customer_q }}">
+            </div>
+            <div class="col-auto">
+                <label class="form-label small mb-0">Created By</label>
+                <select name="created_by" class="form-select form-select-sm">
+                    <option value="">All Users</option>
+                    {% for u in staff_users %}
+                    <option value="{{ u.pk }}" {% if created_by == u.pk|stringformat:"d" %}selected{% endif %}>{{ u.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto align-self-end">
+                <button type="submit" class="btn btn-sm btn-primary">Generate</button>
+                {% if date_from or date_to or customer_q or created_by %}
+                <a href="{% url 'report-topups' %}" class="btn btn-sm btn-outline-secondary">Clear</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Totals -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        {% include "components/stat_widget.html" with icon="bi-cash-stack" value=totals.total_amount|default_if_none:"0.00" label="Total Top-Ups (ILS)" color="success" %}
+    </div>
+    <div class="col-md-6">
+        {% include "components/stat_widget.html" with icon="bi-receipt" value=totals.total_count|default_if_none:"0" label="Number of Top-Ups" color="primary" %}
+    </div>
+</div>
+
+<!-- Top-Ups Table -->
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Date</th>
+                    <th>Customer</th>
+                    <th>Amount (ILS)</th>
+                    <th>Balance Before</th>
+                    <th>Balance After</th>
+                    <th>Receipt #</th>
+                    <th>Notes</th>
+                    <th>Created By</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for txn in page_obj %}
+                <tr>
+                    <td>{{ txn.created_at|date:"d M Y H:i" }}</td>
+                    <td>
+                        <a href="{% url 'customer-detail' txn.wallet.customer.pk %}" class="text-decoration-none">
+                            {{ txn.wallet.customer.full_name }}
+                        </a>
+                    </td>
+                    <td class="fw-bold text-success">+{{ txn.amount }} ILS</td>
+                    <td>{{ txn.balance_before }} ILS</td>
+                    <td>{{ txn.balance_after }} ILS</td>
+                    <td>{{ txn.receipt_number|default:"-" }}</td>
+                    <td class="small">{{ txn.description|default:"-" }}</td>
+                    <td>{{ txn.created_by.full_name|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-4">No top-up transactions found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% include "includes/pagination.html" %}
+{% endblock %}
