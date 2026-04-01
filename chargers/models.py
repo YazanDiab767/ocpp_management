@@ -29,6 +29,11 @@ class ChargePoint(models.Model):
     last_boot = models.DateTimeField(null=True, blank=True)
     heartbeat_interval = models.IntegerField(default=300, help_text='Heartbeat interval in seconds')
     is_active = models.BooleanField(default=True, help_text='If False, BootNotification returns Rejected')
+    boot_enforce_config = models.TextField(
+        blank=True, default='',
+        help_text='OCPP configuration keys to enforce on every boot. One KEY=VALUE per line. '
+                  'Example: StopTransactionOnInvalidId=true',
+    )
     notes = models.TextField(blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

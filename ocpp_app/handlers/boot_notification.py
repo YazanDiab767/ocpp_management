@@ -34,6 +34,21 @@ class BootNotificationHandler(BaseHandler):
 
         interval = cp.heartbeat_interval if cp else 300
 
+        # Auto-enforce configured OCPP keys on every boot
+        if cp and cp.boot_enforce_config and status == 'Accepted':
+            try:
+                from ocpp_app.services import OCPPService
+                for line in cp.boot_enforce_config.splitlines():
+                    line = line.strip()
+                    if '=' in line and not line.startswith('#'):
+                        key, _, value = line.partition('=')
+                        key, value = key.strip(), value.strip()
+                        if key and value:
+                            OCPPService.send_change_configuration(charge_point_id, key, value)
+                            logger.info('Auto-enforced config on boot: %s=%s → %s', key, value, charge_point_id)
+            except Exception:
+                logger.exception('Error auto-enforcing boot configs for %s', charge_point_id)
+
         return {
             'currentTime': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
             'interval': interval,

@@ -9,7 +9,7 @@ class ChargePointForm(forms.ModelForm):
         fields = [
             'charge_point_id', 'name', 'vendor', 'model', 'serial_number',
             'location', 'latitude', 'longitude', 'max_power_kw',
-            'heartbeat_interval', 'is_active', 'notes',
+            'heartbeat_interval', 'is_active', 'boot_enforce_config', 'notes',
         ]
         widgets = {
             'charge_point_id': forms.TextInput(attrs={'class': 'form-control'}),
@@ -23,6 +23,10 @@ class ChargePointForm(forms.ModelForm):
             'max_power_kw': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'heartbeat_interval': forms.NumberInput(attrs={'class': 'form-control'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'boot_enforce_config': forms.Textarea(attrs={
+                'class': 'form-control font-monospace', 'rows': 3,
+                'placeholder': 'StopTransactionOnInvalidId=true\nAuthorizationRequired=true',
+            }),
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
         }
 
