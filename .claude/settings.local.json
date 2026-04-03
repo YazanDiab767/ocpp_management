@@ -26,7 +26,10 @@
       "Bash(python manage.py makemigrations customers --name add_vehicle_fields)",
       "Bash(python manage.py migrate --run-syncdb --check)",
       "Bash(echo \"Exit: $?\")",
-      "Bash(python manage.py showmigrations customers accounts)"
+      "Bash(python manage.py showmigrations customers accounts)",
+      "Bash(python manage.py makemigrations customers --name add_car_make_and_vehicle_fields)",
+      "Bash(python manage.py showmigrations customers)",
+      "Bash(python manage.py dbshell -- -c \"\\\\d customers_customer\")"
     ]
   }
 }

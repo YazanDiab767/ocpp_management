@@ -54,16 +54,16 @@
                     <dt class="col-sm-4">Vehicle Plate</dt>
                     <dd class="col-sm-8">{{ customer.vehicle_plate }}</dd>
                     {% endif %}
-                    {% if customer.vehicle_type %}
-                    <dt class="col-sm-4">Vehicle Type</dt>
-                    <dd class="col-sm-8">{{ customer.get_vehicle_type_display }}</dd>
+                    {% if customer.vehicle_make %}
+                    <dt class="col-sm-4">Make</dt>
+                    <dd class="col-sm-8">{{ customer.vehicle_make.name }}</dd>
                     {% endif %}
                     {% if customer.vehicle_model %}
-                    <dt class="col-sm-4">Vehicle Model</dt>
+                    <dt class="col-sm-4">Model</dt>
                     <dd class="col-sm-8">{{ customer.vehicle_model }}</dd>
                     {% endif %}
                     {% if customer.vehicle_year %}
-                    <dt class="col-sm-4">Year of Production</dt>
+                    <dt class="col-sm-4">Year</dt>
                     <dd class="col-sm-8">{{ customer.vehicle_year }}</dd>
                     {% endif %}
                     {% if customer.notes %}

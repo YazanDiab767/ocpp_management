@@ -1,11 +1,17 @@
 from django.contrib import admin
-from customers.models import Customer, Wallet, WalletTransaction
+from customers.models import CarMake, Customer, Wallet, WalletTransaction
+
+
+@admin.register(CarMake)
+class CarMakeAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+    search_fields = ('name',)
 
 
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ('full_name', 'phone_number', 'is_active', 'created_at')
-    list_filter = ('is_active',)
+    list_display = ('full_name', 'phone_number', 'vehicle_make', 'is_active', 'created_at')
+    list_filter = ('is_active', 'vehicle_make')
     search_fields = ('first_name', 'last_name', 'phone_number')
 
 

@@ -5,17 +5,15 @@ from django.shortcuts import get_object_or_404, redirect, render
 from accounts.decorators import page_permission_required
 
 from customers.forms import CustomerForm, WalletTopupForm
-from customers.models import Customer, WalletTransaction
-
-VEHICLE_TYPE_CHOICES = Customer.VehicleType.choices
+from customers.models import CarMake, Customer, WalletTransaction
 from customers.services import CustomerService, WalletService
 
 
 @page_permission_required('customers')
 def customer_list(request):
     query = request.GET.get('q', '')
-    vehicle_type = request.GET.get('vehicle_type', '')
-    qs = Customer.objects.select_related('wallet').all()
+    make_id = request.GET.get('make', '')
+    qs = Customer.objects.select_related('wallet', 'vehicle_make').all()
     if query:
         from django.db.models import Q
         qs = qs.filter(
@@ -23,15 +21,15 @@ def customer_list(request):
             | Q(last_name__icontains=query)
             | Q(phone_number__icontains=query)
         )
-    if vehicle_type:
-        qs = qs.filter(vehicle_type=vehicle_type)
+    if make_id:
+        qs = qs.filter(vehicle_make_id=make_id)
     paginator = Paginator(qs, 25)
     page_obj = paginator.get_page(request.GET.get('page'))
     return render(request, 'customers/customer_list.html', {
         'page_obj': page_obj,
         'query': query,
-        'vehicle_type': vehicle_type,
-        'vehicle_type_choices': VEHICLE_TYPE_CHOICES,
+        'make_id': make_id,
+        'car_makes': CarMake.objects.all(),
     })
 
 
@@ -57,7 +55,7 @@ def customer_create(request):
 @page_permission_required('customers')
 def customer_detail(request, pk):
     customer = get_object_or_404(
-        Customer.objects.select_related('wallet'),
+        Customer.objects.select_related('wallet', 'vehicle_make'),
         pk=pk,
     )
     rfid_cards = customer.rfid_cards.all()

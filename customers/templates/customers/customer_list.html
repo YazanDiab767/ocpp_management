@@ -18,16 +18,16 @@
                        placeholder="Search by name or phone...">
             </div>
             <div class="col-auto">
-                <select name="vehicle_type" class="form-select form-select-sm" style="min-width: 150px;">
-                    <option value="">All Vehicle Types</option>
-                    {% for value, label in vehicle_type_choices %}
-                    <option value="{{ value }}" {% if vehicle_type == value %}selected{% endif %}>{{ label }}</option>
+                <select name="make" class="form-select form-select-sm" style="min-width: 150px;">
+                    <option value="">All Makes</option>
+                    {% for m in car_makes %}
+                    <option value="{{ m.pk }}" {% if make_id == m.pk|stringformat:"d" %}selected{% endif %}>{{ m.name }}</option>
                     {% endfor %}
                 </select>
             </div>
             <div class="col-auto">
                 <button type="submit" class="btn btn-sm btn-outline-primary">Search</button>
-                {% if query or vehicle_type %}<a href="{% url 'customer-list' %}" class="btn btn-sm btn-outline-secondary">Clear</a>{% endif %}
+                {% if query or make_id %}<a href="{% url 'customer-list' %}" class="btn btn-sm btn-outline-secondary">Clear</a>{% endif %}
             </div>
         </form>
     </div>
@@ -57,7 +57,7 @@
                     </td>
                     <td>{{ customer.phone_number }}</td>
                     <td class="small">
-                        {% if customer.vehicle_type %}{{ customer.get_vehicle_type_display }}{% endif %}
+                        {% if customer.vehicle_make %}{{ customer.vehicle_make.name }}{% endif %}
                         {% if customer.vehicle_model %}<br>{{ customer.vehicle_model }}{% endif %}
                         {% if customer.vehicle_year %} ({{ customer.vehicle_year }}){% endif %}
                     </td>
